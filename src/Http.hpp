@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/13 14:43:38 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/13 16:41:15 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,11 @@
 
 #include <sys/stat.h>	// stat()
 #include <cctype>		// isspace
+#include "colors.h"
+
+#define	SPACES		" \t\v\f\r"
+#define	COMMENT(c)	((c) == '#')
+#define	ENDVALUE(c)	((c) == ';')
 
 enum file_err {
 	E_TOOARGS,
@@ -28,8 +33,11 @@ enum file_err {
 	E_FAIL
 };
 
-enum parse_err {
-	E_SOMETHING,
+enum parser_err {
+	E_NOHTTP,
+	E_BLOCKOPEN,
+	E_INVPROP,
+	E_ENDPROP,
 };
 
 class Http
@@ -41,32 +49,33 @@ class Http
 		Http& operator=( const Http& );
 		Http( int argc, char** argv );  // ---------------------------- PARAM CONSTRUCTOR
 	private:
+		std::string keepalive_timeout;
+		std::string client_body_buffer_size;
 		std::vector<Server> server;
 
 		bool isDirectory( char* path ); // --------------------- PARSING
 		void parse( std::ifstream& confFile );
+		void addProp( std::string propName );
 
-		class InvalidConf; // ------------------------------------- EXCEPTIONS
-		class ParseExcep;
-		file_err _fe;  // ------------------------------------- ERR LISTS
-		parse_err _pe;
+		class FileExcept; // ------------------------------------- EXCEPTIONS
+		class ParserExcept;
 };
 
-class Http::InvalidConf: public std::exception
+class Http::FileExcept: public std::exception
 {
 	private:
 		int	_n;
 	public:
-		InvalidConf( file_err n );
+		FileExcept( file_err n );
 		const char* what() const throw();
 };
 
-class Http::ParseExcep: public std::exception
+class Http::ParserExcept: public std::exception
 {
 	private:
 		int	_n;
 	public:
-		ParseExcep( parse_err n );
+		ParserExcept( parser_err n );
 		const char* what() const throw();
 };
 

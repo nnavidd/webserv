@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 15:34:44 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/13 14:32:04 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/13 16:31:18 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,10 +27,7 @@ class Server
 		std::string				server_name;
 		std::string				listen;
 		std::string				root;
-		std::vector<Location>	location;
-	public:
-		static const std::string keepalive_timeout;
-		static const std::string client_body_buffer_size;
+		std::vector<Location>	location;		
 };
 
 #endif /* __SERVER_HPP__ */
