@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 15:34:44 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/13 16:31:18 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 14:03:47 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ class Server
 		std::string				server_name;
 		std::string				listen;
 		std::string				root;
-		std::vector<Location>	location;		
+		std::vector<Location>	location;
 };
 
 #endif /* __SERVER_HPP__ */

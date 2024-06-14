@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 12:33:48 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 15:30:27 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include <map>
 
 #include <sys/stat.h>	// stat()
 #include <cctype>		// isspace
@@ -36,10 +37,11 @@ enum file_err {
 };
 
 enum parser_err {
-	E_NOHTTP,
+	E_INVBLOCK,
 	E_CONTEXTDECL,
+	E_SYNTAX,
 	E_INVPROP,
-	E_ENDPROP,
+	E_ENDPROP
 };
 
 class Http
@@ -55,15 +57,19 @@ class Http
 	private: // ---------------------------------------------- MEMBERS
 		std::string keepalive_timeout;
 		std::string client_body_buffer_size;
+		std::map<std::string, std::string> directive;
+		
 		std::vector<Server> server;
 
 		bool isDirectory( char* path ); // --------------------- PARSING
 		void parse( std::ifstream& confFile );
 		void parseContext( std::string& line, std::string& currBlock, std::string nextBlock );
-		void parseDirectives( std::string& line, std::string& currBlock );
+		bool parseDirectives( std::string& line, std::string& currBlock );
+		void addDirective( std::string& line, std::string& currBlock, const std::string dir );
 
 		static const std::string httpDirectives[2];
 		static const std::string serverDirectives[3];
+		static const std::string locationDirectives[5];
 
 		class FileExcept; // ------------------------------------- EXCEPTIONS
 		class ParserExcept;

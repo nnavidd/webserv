@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 12:34:30 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 15:34:30 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,19 +62,47 @@ std::string& trim( std::string& s, const char* to_trim ) {
 	return (ltrim(rtrim(s, to_trim), to_trim));
 }
 
-void Http::parseDirectives( std::string& line, std::string& currBlock ) {
-	const std::string* dir;
-	if (currBlock == "http")
-		dir = Http::httpDirectives;
-	if (currBlock == "server")
-		dir = Http::serverDirectives;
-	// explore directives
-	// explore directives
-	// explore directives
-	// explore directives
-	// explore directives
-	// explore directives
-	// explore directives
+void Http::addDirective( std::string& line, std::string& currContext, const std::string key ) {
+	std::string value;
+
+	line.erase(0, key.length());
+	if (line[0] != ' ' && line[0] != '\t') // no separator!
+		throw ParserExcept(E_SYNTAX);
+	ltrim(line, SPACES);
+	if (line.find(';') == std::string::npos ) // got to the end of the value
+		throw ParserExcept(E_ENDPROP);
+	value = line.substr(0, line.find(';'));
+	trim(value, SPACES);
+	directive[key] = value;
+	std::cout << G("* [ DIRECTIVE ADDED ] ---> ") << key << " = " << value << std::endl;
+}
+
+/*	Generic function to parse all the directives of any context. 
+	@param n: number of possible directives of that type
+	@param dir: pointer used to correct point to the list of directives
+*/
+bool Http::parseDirectives( std::string& line, std::string& currContext ) {
+	size_t n;
+	const std::string* dirList;
+	std::string key;
+	
+	if (currContext == "http") {
+		dirList = Http::httpDirectives;
+		n = 2;
+	}
+	if (currContext == "server") {
+		dirList = Http::serverDirectives;
+		n = 5;
+	}
+	for (size_t i = 0; i < n; i++) {
+		key = dirList[i];
+		if (line.compare(0, key.length(), key) == 0) {
+			addDirective(line, currContext, key);
+			return (true);
+		}
+	}
+	return (false);
+	// key added now ?
 }
 
 /*	Tries to:
@@ -82,12 +110,11 @@ void Http::parseDirectives( std::string& line, std::string& currBlock ) {
 	- If the line has not one of those directives, it looks for the next block
 	- Important to note, the location has a different syntax like "location /hello {...}" but maybe can be simplified and put the prop inside it 
 */
-void Http::parseContext( std::string& line, std::string& currBlock, std::string nextBlock ) {
-	parseDirectives(line, currBlock);
-	
-	if ((line.compare(0, nextBlock.length(), nextBlock)) != 0)
-		throw ParserExcept(E_NOHTTP);
-	line.erase(0, nextBlock.length());
+void Http::parseContext( std::string& line, std::string& currContext, std::string nextContext ) {
+	if ((line.compare(0, nextContext.length(), nextContext)) != 0)
+		throw ParserExcept(E_INVBLOCK);
+
+	line.erase(0, nextContext.length());
 	ltrim(line, SPACES);
 	
 	if (!OPENBLOCK(line[0])) 
@@ -95,16 +122,17 @@ void Http::parseContext( std::string& line, std::string& currBlock, std::string 
 	line.erase(0, 1);
 	ltrim(line, SPACES);
 	
-	if (!COMMENT(line[0]) && !ENDVALUE(line[0]))
-		throw ParserExcept(E_CONTEXTDECL);
-	
-	currBlock = nextBlock;
+	// if (!COMMENT(line[0]) && !ENDVALUE(line[0]))
+	// 	throw ParserExcept(E_CONTEXTDECL);
+
+	currContext = nextContext;
+	std::cout << R("* Context switched to: ") << currContext << std::endl;
 }
 
 void Http::parse( std::ifstream& confFile ) {
 	std::string	line;
 
-	std::string currBlock = "begin"; // can change to SERV or LOC
+	std::string currContext = "begin"; // can change to SERV or LOC
 	while(getline(confFile, line)) {
 		if (confFile.fail()) throw FileExcept(E_FAIL);
 		
@@ -112,17 +140,20 @@ void Http::parse( std::ifstream& confFile ) {
 		if (line.empty()) continue ;							// empty lines
 		if (COMMENT(line[0]) || ENDVALUE(line[0])) continue ;	// comment lines
 		std::cout << "------------------------------------------------------------------" << std::endl;
-		std::cout << B("STATE:	") << currBlock << std::endl;
-		std::cout << B("LINE:	[") << line << B("]") << std::endl;
+		std::cout << B("* STATE: [") << currContext << B("]") << std::endl;
+		std::cout << B("* LINE:  [") << line << B("]") << std::endl;
 
 		// states
-		if (currBlock == "begin") {
-			parseContext(line, currBlock, "http");
-			continue ;
+		if (currContext == "begin") {
+			parseContext(line, currContext, "http"); continue ;
 		}
-		else if (currBlock == "http") {
-			parseContext(line, currBlock, "server");
-			continue ;
+		else if (currContext == "http") {
+			if (parseDirectives(line, currContext)) continue ;
+			parseContext(line, currContext, "server");
+		}
+		else if (currContext == "server") {
+			if (parseDirectives(line, currContext)) continue ;
+			parseContext(line, currContext, "location");
 		}
 	}
 }
@@ -142,9 +173,10 @@ const char* Http::FileExcept::what() const throw() {
 Http::ParserExcept::ParserExcept( parser_err n ): _n(n) {};
 
 const char* Http::ParserExcept::what() const throw() {
-	if (_n == E_NOHTTP) return ("no http block");
+	if (_n == E_INVBLOCK) return ("invalid block name");
 	if (_n == E_CONTEXTDECL) return ("invalid context declaration");
 	if (_n == E_INVPROP) return ("invalid property name");
+	if (_n == E_SYNTAX) return ("syntax error");
 	if (_n == E_ENDPROP) return ("syntax error, missing end of line `;`");
 	return ("Unknow exception");
 }
@@ -157,3 +189,9 @@ const std::string Http::serverDirectives[3] = {
 	"server_name",
 	"listen",
 	"root" };
+const std::string Http::locationDirectives[5] = {
+	"root", 
+	"index", 
+	"method", 
+	"autoindex", 
+	"cgi" };
