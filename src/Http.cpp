@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 09:22:11 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 10:40:36 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@
 // ------------------------------------------------------------------- CANONICAL
 Http::Http( void ) {};
 Http::~Http( void ) {};
-Http::Http( const Http& obj ) {/* Not implemented */};
-Http& Http::operator=( const Http& rhs ) {/* Not implemented */};
+Http::Http( const Http& obj ) { (void)obj;/* Not implemented */};
+void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 
 // ---------------------------------------------------------- PARAM CONSTRUCTOR
 Http::Http( int argc, char** argv ) {
@@ -46,26 +46,48 @@ bool Http::isDirectory( char* path ) {
 }
 
 // -------------------------------------------------------------------- PARSING
-static std::string& ltrim( std::string& s, const char* to_trim ) {
+std::string& ltrim( std::string& s, const char* to_trim ) {
 	size_t pos = s.find_first_not_of(to_trim);
 	s.erase(0, pos);
 	return (s);
 }
 
-static std::string& rtrim( std::string& s, const char* to_trim ) {
+std::string& rtrim( std::string& s, const char* to_trim ) {
 	size_t pos = s.find_last_not_of(to_trim);
 	s.erase(pos + 1);
 	return (s);
 }
 
-static std::string& trim( std::string& s, const char* to_trim ) {
+std::string& trim( std::string& s, const char* to_trim ) {
 	return (ltrim(rtrim(s, to_trim), to_trim));
 }
 
-static bool isComment( char c ) {
-	if (c == '#' || c == ';')
-		return (true);
-	return (false);
+static int parseHttp( std::string& line ) {
+	std::string p1 = "keepalive_timeout";
+	std::string p2 = "client_body_buffer_size";
+	std::string dir = "server";
+	
+	if (line.compare(0, p1.length(), p1) == 0)
+		std::cout << "**** PROP! ****" << std::endl;
+	else if (line.compare(0, p2.length(), p2) == 0)
+		std::cout << "**** PROP! ****" << std::endl;
+	else if (line.compare(0, dir.length(), dir) == 0)
+		std::cout << "**** SERVER! ****" << std::endl;
+	
+}
+
+void Http::parseBlock(std::string& state, std::string& line, std::string nestedBlock) {
+	if ((line.compare(0, 4, nestedBlock)) != 0) throw ParserExcept(E_NOHTTP);
+	line.erase(0, 4);
+	ltrim(line, SPACES);
+
+	if (!OPENBLOCK(line[0])) throw ParserExcept(E_CONTEXTDECL);
+	line.erase(0, 1);
+	ltrim(line, SPACES);
+	if (!COMMENT(line[0]) && !ENDVALUE(line[0])) {
+		throw ParserExcept(E_CONTEXTDECL);	// http { helloworld
+	}
+	state = "HTTP";
 }
 
 void Http::parse( std::ifstream& confFile ) {
@@ -74,56 +96,39 @@ void Http::parse( std::ifstream& confFile ) {
 	std::string state = "BEGIN"; // can change to SERV or LOC
 	while(getline(confFile, line)) {
 		if (confFile.fail()) throw FileExcept(E_FAIL);
+		
 		trim(line, SPACES);										// line with only spaces
 		if (line.empty()) continue ;							// empty lines
 		if (COMMENT(line[0]) || ENDVALUE(line[0])) continue ;	// comment lines
-
 		std::cout << "------------------------------------------------------------------" << std::endl;
 		std::cout << B("STATE:	") << state << std::endl;
 		std::cout << B("LINE:	[") << line << B("]") << std::endl;
-		
+
 		// states
 		if (state == "BEGIN") {
+			parseBlock(state, line, "http");
+			continue ;
 			// start finding HTTP
-			if ((line.substr(0, 4)) != "http") throw ParserExcept(E_NOHTTP);
-			line.erase(0, 4);
-			trim(line, SPACES);
-			if (line[0] != '{' && *line.end() != '{') throw ParserExcept(E_BLOCKOPEN);
-			
-			// change state
-			state = "HTTP";
-			continue ;
+			// if ((line.compare(0, 4, "http")) != 0) throw ParserExcept(E_NOHTTP);
+			// line.erase(0, 4);
+			// ltrim(line, SPACES);
+
+			// if (!OPENBLOCK(line[0])) throw ParserExcept(E_CONTEXTDECL);
+			// line.erase(0, 1);
+			// ltrim(line, SPACES);
+			// if (COMMENT(line[0]) || ENDVALUE(line[0])) {
+			// 	state = "HTTP";
+			// 	continue ;
+			// }
+			// throw ParserExcept(E_CONTEXTDECL);	// http { helloworld
 		}
-		else if (state == "HTTP") {			
-			// extract prop
-			if (line.find_first_of(SPACES) == std::string::npos)
-				throw ParserExcept(E_INVPROP); // means there is no space after prop name
-			addProp(line);
-			continue ;
-		}
+		else if (state == "HTTP")
+			if (parseHttp(line)) throw ParserExcept(E_INVPROP);
 	}
 }
 
 void Http::addProp( std::string line ) {
-	size_t endPropName = line.find_first_of(SPACES);
-	std::cout << "first of spaces is: " << endPropName << std::endl;
-	if (line.substr(0, endPropName) == "keepalive_timeout") {
-		line.erase(0, endPropName);
-		trim(line, SPACES);
-		if (line.find(';') == std::string::npos) throw ParserExcept(E_ENDPROP);
-		keepalive_timeout = line.substr(0, line.find(';'));
-		std::cout << G("* PROPERTY ADDED ---> keepalive_timeout = ") << keepalive_timeout << std::endl;
-		return ;
-	}
-	else if (line.substr(0, endPropName) == "client_body_buffer_size") {
-		line.erase(0, endPropName);
-		trim(line, SPACES);
-		if (line.find(';') == std::string::npos) throw ParserExcept(E_ENDPROP);
-		client_body_buffer_size = line.substr(0, line.find(';'));
-		std::cout << G("* PROPERTY ADDED ---> client_body_buffer_size = ") << client_body_buffer_size << std::endl;
-		return ;
-	}
-	throw ParserExcept(E_INVPROP);
+
 }
 
 // ------------------------------------------------------------ FILE EXCEPTIONS
@@ -142,7 +147,7 @@ Http::ParserExcept::ParserExcept( parser_err n ): _n(n) {};
 
 const char* Http::ParserExcept::what() const throw() {
 	if (_n == E_NOHTTP) return ("no http block");
-	if (_n == E_BLOCKOPEN) return ("syntax error, missing separator `{`");
+	if (_n == E_CONTEXTDECL) return ("invalid context declaration");
 	if (_n == E_INVPROP) return ("invalid property name");
 	if (_n == E_ENDPROP) return ("syntax error, missing end of line `;`");
 	return ("Unknow exception");

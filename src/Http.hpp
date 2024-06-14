@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 09:19:11 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 10:40:23 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,9 +22,11 @@
 #include <cctype>		// isspace
 #include "colors.h"
 
-#define	SPACES		" \t\v\f\r"
-#define	COMMENT(c)	((c) == '#')
-#define	ENDVALUE(c)	((c) == ';')
+#define	SPACES			" \t\v\f\r"
+#define	COMMENT(c)		((c) == '#')
+#define	ENDVALUE(c)		((c) == ';')
+#define	OPENBLOCK(c)	((c) == '{')
+#define	CLOSEBLOCK(c)	((c) == '}')
 
 enum file_err {
 	E_TOOARGS,
@@ -35,26 +37,29 @@ enum file_err {
 
 enum parser_err {
 	E_NOHTTP,
-	E_BLOCKOPEN,
+	E_CONTEXTDECL,
 	E_INVPROP,
 	E_ENDPROP,
 };
 
 class Http
 {
-	public:
-		Http( void ); // -------------------------------------------- CANONICAL
+	public: // ---------------------------------------------- CONSTRUCTORS
+		Http( int argc, char** argv );
 		~Http( void );
-		Http( const Http& );
-		Http& operator=( const Http& );
-		Http( int argc, char** argv );  // ---------------------------- PARAM CONSTRUCTOR
 	private:
+		Http( void );
+		Http( const Http& );
+		void operator=( const Http& );
+		
+	private: // ---------------------------------------------- MEMBERS
 		std::string keepalive_timeout;
 		std::string client_body_buffer_size;
 		std::vector<Server> server;
 
 		bool isDirectory( char* path ); // --------------------- PARSING
 		void parse( std::ifstream& confFile );
+		void parseBlock( std::string& state, std::string& line, std::string nestedBlock );
 		void addProp( std::string propName );
 
 		class FileExcept; // ------------------------------------- EXCEPTIONS
