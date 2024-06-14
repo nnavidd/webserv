@@ -6,13 +6,13 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 10:40:36 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 12:34:30 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Http.hpp"
 
-// ------------------------------------------------------------------- CANONICAL
+// ------------------------------------------------------------------ CANONICAL
 Http::Http( void ) {};
 Http::~Http( void ) {};
 Http::Http( const Http& obj ) { (void)obj;/* Not implemented */};
@@ -62,38 +62,49 @@ std::string& trim( std::string& s, const char* to_trim ) {
 	return (ltrim(rtrim(s, to_trim), to_trim));
 }
 
-static int parseHttp( std::string& line ) {
-	std::string p1 = "keepalive_timeout";
-	std::string p2 = "client_body_buffer_size";
-	std::string dir = "server";
-	
-	if (line.compare(0, p1.length(), p1) == 0)
-		std::cout << "**** PROP! ****" << std::endl;
-	else if (line.compare(0, p2.length(), p2) == 0)
-		std::cout << "**** PROP! ****" << std::endl;
-	else if (line.compare(0, dir.length(), dir) == 0)
-		std::cout << "**** SERVER! ****" << std::endl;
-	
+void Http::parseDirectives( std::string& line, std::string& currBlock ) {
+	const std::string* dir;
+	if (currBlock == "http")
+		dir = Http::httpDirectives;
+	if (currBlock == "server")
+		dir = Http::serverDirectives;
+	// explore directives
+	// explore directives
+	// explore directives
+	// explore directives
+	// explore directives
+	// explore directives
+	// explore directives
 }
 
-void Http::parseBlock(std::string& state, std::string& line, std::string nestedBlock) {
-	if ((line.compare(0, 4, nestedBlock)) != 0) throw ParserExcept(E_NOHTTP);
-	line.erase(0, 4);
+/*	Tries to:
+	- Look for the directives of the currentBlock
+	- If the line has not one of those directives, it looks for the next block
+	- Important to note, the location has a different syntax like "location /hello {...}" but maybe can be simplified and put the prop inside it 
+*/
+void Http::parseContext( std::string& line, std::string& currBlock, std::string nextBlock ) {
+	parseDirectives(line, currBlock);
+	
+	if ((line.compare(0, nextBlock.length(), nextBlock)) != 0)
+		throw ParserExcept(E_NOHTTP);
+	line.erase(0, nextBlock.length());
 	ltrim(line, SPACES);
-
-	if (!OPENBLOCK(line[0])) throw ParserExcept(E_CONTEXTDECL);
+	
+	if (!OPENBLOCK(line[0])) 
+		throw ParserExcept(E_CONTEXTDECL);
 	line.erase(0, 1);
 	ltrim(line, SPACES);
-	if (!COMMENT(line[0]) && !ENDVALUE(line[0])) {
-		throw ParserExcept(E_CONTEXTDECL);	// http { helloworld
-	}
-	state = "HTTP";
+	
+	if (!COMMENT(line[0]) && !ENDVALUE(line[0]))
+		throw ParserExcept(E_CONTEXTDECL);
+	
+	currBlock = nextBlock;
 }
 
 void Http::parse( std::ifstream& confFile ) {
 	std::string	line;
 
-	std::string state = "BEGIN"; // can change to SERV or LOC
+	std::string currBlock = "begin"; // can change to SERV or LOC
 	while(getline(confFile, line)) {
 		if (confFile.fail()) throw FileExcept(E_FAIL);
 		
@@ -101,34 +112,19 @@ void Http::parse( std::ifstream& confFile ) {
 		if (line.empty()) continue ;							// empty lines
 		if (COMMENT(line[0]) || ENDVALUE(line[0])) continue ;	// comment lines
 		std::cout << "------------------------------------------------------------------" << std::endl;
-		std::cout << B("STATE:	") << state << std::endl;
+		std::cout << B("STATE:	") << currBlock << std::endl;
 		std::cout << B("LINE:	[") << line << B("]") << std::endl;
 
 		// states
-		if (state == "BEGIN") {
-			parseBlock(state, line, "http");
+		if (currBlock == "begin") {
+			parseContext(line, currBlock, "http");
 			continue ;
-			// start finding HTTP
-			// if ((line.compare(0, 4, "http")) != 0) throw ParserExcept(E_NOHTTP);
-			// line.erase(0, 4);
-			// ltrim(line, SPACES);
-
-			// if (!OPENBLOCK(line[0])) throw ParserExcept(E_CONTEXTDECL);
-			// line.erase(0, 1);
-			// ltrim(line, SPACES);
-			// if (COMMENT(line[0]) || ENDVALUE(line[0])) {
-			// 	state = "HTTP";
-			// 	continue ;
-			// }
-			// throw ParserExcept(E_CONTEXTDECL);	// http { helloworld
 		}
-		else if (state == "HTTP")
-			if (parseHttp(line)) throw ParserExcept(E_INVPROP);
+		else if (currBlock == "http") {
+			parseContext(line, currBlock, "server");
+			continue ;
+		}
 	}
-}
-
-void Http::addProp( std::string line ) {
-
 }
 
 // ------------------------------------------------------------ FILE EXCEPTIONS
@@ -152,3 +148,12 @@ const char* Http::ParserExcept::what() const throw() {
 	if (_n == E_ENDPROP) return ("syntax error, missing end of line `;`");
 	return ("Unknow exception");
 }
+
+// -------------------------------------------------------------------- STATICS
+const std::string Http::httpDirectives[2] = {
+	"keepalive_timeout",
+	"client_body_buffer_size" };
+const std::string Http::serverDirectives[3] = {
+	"server_name",
+	"listen",
+	"root" };

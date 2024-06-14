@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 10:40:23 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 12:33:48 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,8 +59,11 @@ class Http
 
 		bool isDirectory( char* path ); // --------------------- PARSING
 		void parse( std::ifstream& confFile );
-		void parseBlock( std::string& state, std::string& line, std::string nestedBlock );
-		void addProp( std::string propName );
+		void parseContext( std::string& line, std::string& currBlock, std::string nextBlock );
+		void parseDirectives( std::string& line, std::string& currBlock );
+
+		static const std::string httpDirectives[2];
+		static const std::string serverDirectives[3];
 
 		class FileExcept; // ------------------------------------- EXCEPTIONS
 		class ParserExcept;
