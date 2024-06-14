@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 15:34:30 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 15:50:43 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,8 +122,8 @@ void Http::parseContext( std::string& line, std::string& currContext, std::strin
 	line.erase(0, 1);
 	ltrim(line, SPACES);
 	
-	// if (!COMMENT(line[0]) && !ENDVALUE(line[0]))
-	// 	throw ParserExcept(E_CONTEXTDECL);
+	if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok]
+		throw ParserExcept(E_CONTEXTDECL);
 
 	currContext = nextContext;
 	std::cout << R("* Context switched to: ") << currContext << std::endl;

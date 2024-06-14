@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 15:30:27 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/14 15:47:43 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #include "colors.h"
 
 #define	SPACES			" \t\v\f\r"
+#define	NEWLINE(c)		((c) == '\n')
 #define	COMMENT(c)		((c) == '#')
 #define	ENDVALUE(c)		((c) == ';')
 #define	OPENBLOCK(c)	((c) == '{')
