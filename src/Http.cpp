@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 15:50:43 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/15 12:44:22 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,14 @@ Http::Http( const Http& obj ) { (void)obj;/* Not implemented */};
 void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 
 // ---------------------------------------------------------- PARAM CONSTRUCTOR
-Http::Http( int argc, char** argv ) {
+Http::Http( int argc, char** argv ): 
+	_n_server(0) {
+
+	state.beginOpen = false;
+	state.httpOpen = false; // move from here, clean the function
+	state.serverOpen = false;
+	state.locationOpen = false;
+	
 	if (argc > 2) throw FileExcept(E_TOOARGS);
 	std::ifstream confFile;
 	if (!argv[1] || std::string(argv[1]).empty())
@@ -73,8 +80,13 @@ void Http::addDirective( std::string& line, std::string& currContext, const std:
 		throw ParserExcept(E_ENDPROP);
 	value = line.substr(0, line.find(';'));
 	trim(value, SPACES);
-	directive[key] = value;
-	std::cout << G("* [ DIRECTIVE ADDED ] ---> ") << key << " = " << value << std::endl;
+
+	if (currContext == "http")
+		_directive[key] = value;
+	
+	if (currContext == "server")
+		_server.back().setSettings(key, value);
+	std::cout << G("* [ ") << currContext << G(" DIRECTIVE ADDED ] ---> ") << key << " = " << value << std::endl;
 }
 
 /*	Generic function to parse all the directives of any context. 
@@ -87,11 +99,11 @@ bool Http::parseDirectives( std::string& line, std::string& currContext ) {
 	std::string key;
 	
 	if (currContext == "http") {
-		dirList = Http::httpDirectives;
+		dirList = Http::_httpDirList;
 		n = 2;
 	}
 	if (currContext == "server") {
-		dirList = Http::serverDirectives;
+		dirList = Http::_serverDirList;
 		n = 5;
 	}
 	for (size_t i = 0; i < n; i++) {
@@ -102,7 +114,6 @@ bool Http::parseDirectives( std::string& line, std::string& currContext ) {
 		}
 	}
 	return (false);
-	// key added now ?
 }
 
 /*	Tries to:
@@ -110,29 +121,65 @@ bool Http::parseDirectives( std::string& line, std::string& currContext ) {
 	- If the line has not one of those directives, it looks for the next block
 	- Important to note, the location has a different syntax like "location /hello {...}" but maybe can be simplified and put the prop inside it 
 */
-void Http::parseContext( std::string& line, std::string& currContext, std::string nextContext ) {
-	if ((line.compare(0, nextContext.length(), nextContext)) != 0)
-		throw ParserExcept(E_INVBLOCK);
+void Http::parseContext( std::string& line, std::string& currContext ) {
+	std::string nextContext;
+	if (currContext == "begin") nextContext = "http";
+	else if (currContext == "http") nextContext = "server";
+	else if (currContext == "server") nextContext = "location";
+	else if (currContext == "location") nextContext = "end";
 
+	if (CLOSEBLOCK(line[0])) {
+		line.erase(0, 1);
+		ltrim(line, SPACES);
+		if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok] 
+			throw ParserExcept(E_CONTEXTDECL);
+		closeState(currContext);
+		return ;
+	}
+
+	// check if valid context name
+	if ((line.compare(0, nextContext.length(), nextContext)) != 0)
+		throw ParserExcept(E_INVENTRY); // here should catch the invlid property too
 	line.erase(0, nextContext.length());
 	ltrim(line, SPACES);
-	
+
+	// check if valid opening bracket
 	if (!OPENBLOCK(line[0])) 
 		throw ParserExcept(E_CONTEXTDECL);
 	line.erase(0, 1);
 	ltrim(line, SPACES);
 	
+	// check if comment or end value
 	if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok]
 		throw ParserExcept(E_CONTEXTDECL);
+	
+	// arriving here means open the context
+	openState(currContext, nextContext);
+}
 
+void Http::openState( std::string& currContext, std::string nextContext ) {
+	if (currContext == "begin")
+		state.httpOpen = true;
+	else if (currContext == "http")
+		state.serverOpen = true;
+	else if (currContext == "server")
+		state.locationOpen = true;
+	else if (currContext == "location")
+		throw ParserExcept(E_INVENTRY);
 	currContext = nextContext;
-	std::cout << R("* Context switched to: ") << currContext << std::endl;
+	std::cout << R("* Context open: ") << currContext << std::endl;
+}
+void Http::closeState( std::string currContext ) {
+	std::cout << R("* Context close: ") << currContext << std::endl;
+	if (currContext == "http") state.httpOpen = false;
+	else if (currContext == "server") state.serverOpen = false;
+	else if (currContext == "location") state.locationOpen = false;
 }
 
 void Http::parse( std::ifstream& confFile ) {
 	std::string	line;
-
 	std::string currContext = "begin"; // can change to SERV or LOC
+
 	while(getline(confFile, line)) {
 		if (confFile.fail()) throw FileExcept(E_FAIL);
 		
@@ -145,15 +192,20 @@ void Http::parse( std::ifstream& confFile ) {
 
 		// states
 		if (currContext == "begin") {
-			parseContext(line, currContext, "http"); continue ;
+			parseContext(line, currContext); continue ;
 		}
 		else if (currContext == "http") {
 			if (parseDirectives(line, currContext)) continue ;
-			parseContext(line, currContext, "server");
+			parseContext(line, currContext);
 		}
 		else if (currContext == "server") {
-			if (parseDirectives(line, currContext)) continue ;
-			parseContext(line, currContext, "location");
+			if (state.serverOpen) { // create a new server ONLY IF the precedent is closed
+				Server s(_n_server);
+				_server.push_back(s);
+				_n_server++;
+			}
+			if (parseDirectives(line, currContext)) continue ; // either OPEN or NEW server, the directives are parsed
+			parseContext(line, currContext);
 		}
 	}
 }
@@ -173,7 +225,7 @@ const char* Http::FileExcept::what() const throw() {
 Http::ParserExcept::ParserExcept( parser_err n ): _n(n) {};
 
 const char* Http::ParserExcept::what() const throw() {
-	if (_n == E_INVBLOCK) return ("invalid block name");
+	if (_n == E_INVENTRY) return ("invalid dirctive or context name");
 	if (_n == E_CONTEXTDECL) return ("invalid context declaration");
 	if (_n == E_INVPROP) return ("invalid property name");
 	if (_n == E_SYNTAX) return ("syntax error");
@@ -182,14 +234,14 @@ const char* Http::ParserExcept::what() const throw() {
 }
 
 // -------------------------------------------------------------------- STATICS
-const std::string Http::httpDirectives[2] = {
+const std::string Http::_httpDirList[2] = {
 	"keepalive_timeout",
 	"client_body_buffer_size" };
-const std::string Http::serverDirectives[3] = {
+const std::string Http::_serverDirList[3] = {
 	"server_name",
 	"listen",
 	"root" };
-const std::string Http::locationDirectives[5] = {
+const std::string Http::_locationDirList[5] = {
 	"root", 
 	"index", 
 	"method", 

@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/14 15:47:43 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/15 12:43:37 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,41 +38,53 @@ enum file_err {
 };
 
 enum parser_err {
-	E_INVBLOCK,
+	E_INVENTRY,
 	E_CONTEXTDECL,
 	E_SYNTAX,
 	E_INVPROP,
 	E_ENDPROP
 };
 
+struct parsingState {
+	bool beginOpen;
+	bool httpOpen;
+	bool serverOpen;
+	bool locationOpen;
+};
+
 class Http
 {
-	public: // ---------------------------------------------- CONSTRUCTORS
+	public: // -------------------------------------------- PUBLIC CONSTRUCTORS
 		Http( int argc, char** argv );
 		~Http( void );
-	private:
+	private:  // ----------------------------------------- PRIVATE CONSTRUCTORS
 		Http( void );
 		Http( const Http& );
 		void operator=( const Http& );
 		
-	private: // ---------------------------------------------- MEMBERS
-		std::string keepalive_timeout;
-		std::string client_body_buffer_size;
-		std::map<std::string, std::string> directive;
+	public: // ------------------------------------------------- PUBLIC MEMBERS
+	
+	private: // ----------------------------------------------- PRIVATE MEMBERS
+		std::map<std::string, std::string> _directive;
 		
-		std::vector<Server> server;
+		size_t _n_server;
+		std::vector<Server> _server;
 
-		bool isDirectory( char* path ); // --------------------- PARSING
+		bool isDirectory( char* path ); // ---------------------------- PARSING
 		void parse( std::ifstream& confFile );
-		void parseContext( std::string& line, std::string& currBlock, std::string nextBlock );
+		void parseContext( std::string& line, std::string& currContext );
 		bool parseDirectives( std::string& line, std::string& currBlock );
 		void addDirective( std::string& line, std::string& currBlock, const std::string dir );
 
-		static const std::string httpDirectives[2];
-		static const std::string serverDirectives[3];
-		static const std::string locationDirectives[5];
+		struct parsingState state;
+		void openState( std::string& currContext, std::string nextContext );
+		void closeState( std::string context );
 
-		class FileExcept; // ------------------------------------- EXCEPTIONS
+		static const std::string _httpDirList[2]; // ---------- DIRECTIVE LISTS
+		static const std::string _serverDirList[3];
+		static const std::string _locationDirList[5];
+
+		class FileExcept; // --------------------------------------- EXCEPTIONS
 		class ParserExcept;
 };
 
