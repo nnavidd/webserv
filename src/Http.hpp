@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/15 12:43:37 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/15 12:53:36 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,10 @@ enum parser_err {
 };
 
 struct parsingState {
-	bool beginOpen;
-	bool httpOpen;
-	bool serverOpen;
-	bool locationOpen;
+	bool begin;
+	bool http;
+	short server;
+	short location;
 };
 
 class Http

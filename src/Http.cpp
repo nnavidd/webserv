@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/15 12:44:22 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/15 13:10:00 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,10 @@ void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 Http::Http( int argc, char** argv ): 
 	_n_server(0) {
 
-	state.beginOpen = false;
-	state.httpOpen = false; // move from here, clean the function
-	state.serverOpen = false;
-	state.locationOpen = false;
+	state.begin = true;// move from here, clean the function
+	state.http = false; 
+	state.server = -1;
+	state.location = -1;
 	
 	if (argc > 2) throw FileExcept(E_TOOARGS);
 	std::ifstream confFile;
@@ -81,10 +81,12 @@ void Http::addDirective( std::string& line, std::string& currContext, const std:
 	value = line.substr(0, line.find(';'));
 	trim(value, SPACES);
 
-	if (currContext == "http")
+	// if (currContext == "http")
+	if (!state.server)
 		_directive[key] = value;
 	
-	if (currContext == "server")
+	// if (currContext == "server")
+	if (!state.location)
 		_server.back().setSettings(key, value);
 	std::cout << G("* [ ") << currContext << G(" DIRECTIVE ADDED ] ---> ") << key << " = " << value << std::endl;
 }
@@ -93,16 +95,18 @@ void Http::addDirective( std::string& line, std::string& currContext, const std:
 	@param n: number of possible directives of that type
 	@param dir: pointer used to correct point to the list of directives
 */
-bool Http::parseDirectives( std::string& line, std::string& currContext ) {
+bool Http::parseDirectives( std::string& line, /* remove */std::string& currContext ) {
 	size_t n;
 	const std::string* dirList;
 	std::string key;
 	
-	if (currContext == "http") {
+	if (!state.http)
+		return (true);
+	if (!state.server) {
 		dirList = Http::_httpDirList;
 		n = 2;
 	}
-	if (currContext == "server") {
+	if (!state.location) {
 		dirList = Http::_serverDirList;
 		n = 5;
 	}
@@ -123,19 +127,19 @@ bool Http::parseDirectives( std::string& line, std::string& currContext ) {
 */
 void Http::parseContext( std::string& line, std::string& currContext ) {
 	std::string nextContext;
-	if (currContext == "begin") nextContext = "http";
-	else if (currContext == "http") nextContext = "server";
-	else if (currContext == "server") nextContext = "location";
-	else if (currContext == "location") nextContext = "end";
+	if (!state.http) nextContext = "http";
+	else if (!state.server) nextContext = "server";
+	else if (!state.location) nextContext = "location";
+	// else if (!state.begin) nextContext = "begin"; ???
 
-	if (CLOSEBLOCK(line[0])) {
-		line.erase(0, 1);
-		ltrim(line, SPACES);
-		if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok] 
-			throw ParserExcept(E_CONTEXTDECL);
-		closeState(currContext);
-		return ;
-	}
+	// if (CLOSEBLOCK(line[0])) {
+	// 	line.erase(0, 1);
+	// 	ltrim(line, SPACES);
+	// 	if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok] 
+	// 		throw ParserExcept(E_CONTEXTDECL);
+	// 	closeState(currContext);
+	// 	return ;
+	// }
 
 	// check if valid context name
 	if ((line.compare(0, nextContext.length(), nextContext)) != 0)
@@ -152,28 +156,21 @@ void Http::parseContext( std::string& line, std::string& currContext ) {
 	// check if comment or end value
 	if (!COMMENT(line[0]) && !ENDVALUE(line[0]) && !line.empty()) // FIXED: example [server { ok] OR [server { #ok]
 		throw ParserExcept(E_CONTEXTDECL);
-	
 	// arriving here means open the context
 	openState(currContext, nextContext);
 }
 
 void Http::openState( std::string& currContext, std::string nextContext ) {
-	if (currContext == "begin")
-		state.httpOpen = true;
-	else if (currContext == "http")
-		state.serverOpen = true;
-	else if (currContext == "server")
-		state.locationOpen = true;
-	else if (currContext == "location")
-		throw ParserExcept(E_INVENTRY);
-	currContext = nextContext;
-	std::cout << R("* Context open: ") << currContext << std::endl;
+	if (!state.http) state.http = true;
+	else if (!state.server) state.server = 1;
+	else if (!state.location) state.location = 1;
+	std::cout << R("* Opening state: ") << std::endl;
 }
 void Http::closeState( std::string currContext ) {
 	std::cout << R("* Context close: ") << currContext << std::endl;
-	if (currContext == "http") state.httpOpen = false;
-	else if (currContext == "server") state.serverOpen = false;
-	else if (currContext == "location") state.locationOpen = false;
+	if (currContext == "http") state.http = false;
+	else if (currContext == "server") state.server = false;
+	else if (currContext == "location") state.location = false;
 }
 
 void Http::parse( std::ifstream& confFile ) {
@@ -187,26 +184,31 @@ void Http::parse( std::ifstream& confFile ) {
 		if (line.empty()) continue ;							// empty lines
 		if (COMMENT(line[0]) || ENDVALUE(line[0])) continue ;	// comment lines
 		std::cout << "------------------------------------------------------------------" << std::endl;
-		std::cout << B("* STATE: [") << currContext << B("]") << std::endl;
+		std::cout << B("* CURRENT STATE: [");
+		if (!state.http) std::cout << "begin";
+		else if (!state.server) std::cout << "http";
+		else if (!state.location) std::cout << "server";
+		else std::cout << "location";
+		std::cout << B("]") << std::endl;
 		std::cout << B("* LINE:  [") << line << B("]") << std::endl;
 
+		if (parseDirectives(line, currContext)) continue ;
+		parseContext(line, currContext); continue ;
 		// states
-		if (currContext == "begin") {
-			parseContext(line, currContext); continue ;
-		}
-		else if (currContext == "http") {
-			if (parseDirectives(line, currContext)) continue ;
-			parseContext(line, currContext);
-		}
-		else if (currContext == "server") {
-			if (state.serverOpen) { // create a new server ONLY IF the precedent is closed
-				Server s(_n_server);
-				_server.push_back(s);
-				_n_server++;
-			}
-			if (parseDirectives(line, currContext)) continue ; // either OPEN or NEW server, the directives are parsed
-			parseContext(line, currContext);
-		}
+		// if (!state.http) { // search http
+		// 	parseContext(line, currContext); continue ;
+		// }
+		// else if (!state.server) {
+		// 	if (parseDirectives(line, currContext)) continue ;
+		// 	parseContext(line, currContext);
+		// }
+		// else if (!state.location) {
+		// 	Server s(_n_server);
+		// 	_server.push_back(s);
+		// 	_n_server++;
+		// 	if (parseDirectives(line, currContext)) continue ; // either OPEN or NEW server, the directives are parsed
+		// 	parseContext(line, currContext);
+		// }
 	}
 }
 
