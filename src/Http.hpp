@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/15 12:53:36 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/15 17:00:04 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,17 @@ enum parser_err {
 };
 
 struct parsingState {
-	bool begin;
 	bool http;
-	short server;
+	bool httpToOpen;
+	bool httpToClose;
+	
+	short server; // incremented when a server is open
+	bool serverToOpen;
+	bool serverToClose;
+	
 	short location;
+	bool locationToOpen;
+	bool locationToClose;
 };
 
 class Http
@@ -71,14 +78,11 @@ class Http
 		std::vector<Server> _server;
 
 		bool isDirectory( char* path ); // ---------------------------- PARSING
-		void parse( std::ifstream& confFile );
-		void parseContext( std::string& line, std::string& currContext );
-		bool parseDirectives( std::string& line, std::string& currBlock );
-		void addDirective( std::string& line, std::string& currBlock, const std::string dir );
+		void parse( std::ifstream& confFile, std::string& line );
 
 		struct parsingState state;
-		void openState( std::string& currContext, std::string nextContext );
-		void closeState( std::string context );
+		bool switchState( std::string& line );
+		std::string getState ( void );
 
 		static const std::string _httpDirList[2]; // ---------- DIRECTIVE LISTS
 		static const std::string _serverDirList[3];
