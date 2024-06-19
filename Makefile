@@ -6,7 +6,7 @@
 #    By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/06/12 10:15:37 by ncasteln          #+#    #+#              #
-#    Updated: 2024/06/14 12:28:36 by ncasteln         ###   ########.fr        #
+#    Updated: 2024/06/19 10:42:00 by ncasteln         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,8 +32,15 @@ INCLUDE		=	-I./include/
 OBJS_PATH	=	objs
 OBJS		=	$(SRC:%.cpp=$(OBJS_PATH)/%.o)
 
+# SILENT		=	-DSILENT=0
+# ifeq ($(filter SILENT,$(MAKECMDGOALS)),SILENT)
+# 	SILENT	=	-DSILENT=1
+# endif
+
 # ----------------------------------------------------------------------- BASIC
 all: $(NAME)
+
+silent: $(NAME)
 
 $(NAME): $(OBJS)
 	c++ $(CXXFLAGS) $(INCLUDE) $(OBJS) -o $(NAME)

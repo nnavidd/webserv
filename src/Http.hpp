@@ -6,12 +6,16 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/15 17:00:04 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 10:53:59 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __HTTP_HPP__
 # define __HTTP_HPP__
+
+#ifndef	SILENT
+# define SILENT	0
+#endif
 
 #include "Server.hpp"
 #include <stdexcept>
@@ -30,33 +34,29 @@
 #define	OPENBLOCK(c)	((c) == '{')
 #define	CLOSEBLOCK(c)	((c) == '}')
 
+#define N_HTTP_DIR		3
+#define N_SERVER_DIR	4
+#define N_LOCATION_DIR	6
+
 enum file_err {
-	E_TOOARGS,
+	E_TOOARGS = 110,
 	E_INVFILE,
 	E_ISDIR,
 	E_FAIL
 };
 
 enum parser_err {
-	E_INVENTRY,
-	E_CONTEXTDECL,
-	E_SYNTAX,
-	E_INVPROP,
-	E_ENDPROP
+	E_ONLYTABS = 114,
+	E_INVDIR,
+	E_INVCONTEXT,
+	E_INVIND
 };
 
-struct parsingState {
-	bool http;
-	bool httpToOpen;
-	bool httpToClose;
-	
-	short server; // incremented when a server is open
-	bool serverToOpen;
-	bool serverToClose;
-	
-	short location;
-	bool locationToOpen;
-	bool locationToClose;
+enum indentation {
+	INIT = -1,
+	HTTP,
+	SERVER,
+	LOCATION
 };
 
 class Http
@@ -72,21 +72,31 @@ class Http
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 	
 	private: // ----------------------------------------------- PRIVATE MEMBERS
-		std::map<std::string, std::string> _directive;
+		std::map<std::string, std::string> _settings;
 		
 		size_t _n_server;
 		std::vector<Server> _server;
 
 		bool isDirectory( char* path ); // ---------------------------- PARSING
-		void parse( std::ifstream& confFile, std::string& line );
+		void parse( std::ifstream& confFile );
+		
+		// indentation _prevLvl;
+		indentation _currLvl;
+		indentation _activeContext;
+		void setCurrIndentation( std::string& line );
+		std::string displayIndentantion( indentation );
+		
+		
+		std::string getCurrDirective( std::string& line );
+		bool isValidDirective( std::string currDirective );
+		
+		bool openContext( std::string contextToOpen );
+		void closeContext( void );
+		bool isCorrectContextOpen( std::string currDirective );
 
-		struct parsingState state;
-		bool switchState( std::string& line );
-		std::string getState ( void );
-
-		static const std::string _httpDirList[2]; // ---------- DIRECTIVE LISTS
-		static const std::string _serverDirList[3];
-		static const std::string _locationDirList[5];
+		static const std::string _httpDirectives[N_HTTP_DIR]; // ---------- DIRECTIVE LISTS
+		static const std::string _serverDirectives[N_SERVER_DIR];
+		static const std::string _locationDirectives[N_LOCATION_DIR];
 
 		class FileExcept; // --------------------------------------- EXCEPTIONS
 		class ParserExcept;
