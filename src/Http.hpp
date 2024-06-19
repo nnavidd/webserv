@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 12:41:46 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 16:43:30 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@
 #include <sys/stat.h>	// stat()
 #include <cctype>		// isspace
 #include "colors.h"
+
+#define DEFAULT_FILE_PATH	"./conf/default.conf"
 
 #define	SPACES			" \t\v\f\r"
 #define	NEWLINE(c)		((c) == '\n')
@@ -71,14 +73,14 @@ class Http
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 	
 	private: // ----------------------------------------------- PRIVATE MEMBERS
-		std::map<std::string, std::string> _settings;
-		
 		size_t _n_server;
 		std::vector<Server> _server;
+		std::map<std::string, std::string> _settings;
 
 		bool isDirectory( char* path ); // ---------------------------- PARSING
 		void parse( std::ifstream& confFile );
 		
+		indentation _prevLvl;
 		indentation _currLvl;
 		indentation _activeContext;
 		void setCurrIndentation( std::string& line );
@@ -96,7 +98,6 @@ class Http
 		void storeDirective(std::string directive, std::string value);
 
 		void displayConfiguration( void );
-		void displayServerConf( void );
 
 		static const std::string _httpDirectives[N_HTTP_DIR]; // ---------- DIRECTIVE LISTS
 		static const std::string _serverDirectives[N_SERVER_DIR];

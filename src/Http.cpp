@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 12:41:04 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 17:02:19 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 // ---------------------------------------------------------- PARAM CONSTRUCTOR
 Http::Http( int argc, char** argv ): 
 	_n_server(0),
+	_prevLvl(HTTP),
 	_currLvl(HTTP),
 	_activeContext(HTTP) {
 
@@ -28,7 +29,7 @@ Http::Http( int argc, char** argv ):
 
 	std::ifstream confFile;
 	if (!argv[1] || std::string(argv[1]).empty())
-		confFile.open("./conf/default.conf", std::ifstream::in);
+		confFile.open(DEFAULT_FILE_PATH, std::ifstream::in);
 	else {
 		confFile.open(argv[1], std::ifstream::in);
 		if (!confFile) throw FileExcept(E_INVFILE);
@@ -83,29 +84,28 @@ void Http::parse( std::ifstream& confFile ) {
 		setCurrIndentation(line); // set curr level based on line TABS
 		std::cout << "------------------------------------------------------------" << std::endl;
 		std::cout << G("* [LINE]     ") << "[" << line << "]" << std::endl;
+		std::cout << B("* [PREV IND] ") << "[ " << displayIndentantion(_prevLvl) << " ]" << std::endl;
 		std::cout << B("* [CURR IND] ") << "[ " << displayIndentantion(_currLvl) << " ]" << std::endl;
 
 		directive = getDirective(line);
 		if (!isValidDirective(directive))						// the directive exists
 			throw ParserExcept(E_INVDIR);
-		if (openContext(directive)) {
-			// std::cout << R("* Created server NUMBER: ") << _n_server << std::endl;
-			// Server s(_n_server);
-			// _server.push_back(s);
-			// _n_server++;
+		if (openContext(directive))
 			continue ;
-		}
 		closeContext();												// if the current level of indentation is lower than the one before, one or two context are closed 
 		if (!isCorrectContextOpen())			// check if the context for {{{THAT}}} directive is open
 			throw ParserExcept(E_INVCONTEXT);
 		value = getValue(directive, line);
 		storeDirective(directive, value);
 	}
-	// displayConfiguration();
+	displayConfiguration();
 }
 
-/*	Get the number of tabs preceding the line and erase them. */
+/*	Get the number of tabs preceding the line and erase them. To detect some 
+	wrong nesting, we need to store the value of the previous context.
+*/
 void Http::setCurrIndentation( std::string& line ) {
+	_prevLvl = _currLvl;
 	int i = 0;
 	while (line[static_cast<size_t>(i)] == '\t')
 		i++;
@@ -132,7 +132,7 @@ std::string Http::getDirective( std::string& line ) {
 	return (directive); // can be also a context names
 }
 
-bool Http::isValidDirective( std::string Directive ) {	
+bool Http::isValidDirective( std::string directive ) {	
 	size_t size;
 	const std::string* list;
 
@@ -149,21 +149,37 @@ bool Http::isValidDirective( std::string Directive ) {
 		size = N_LOCATION_DIR;
 	}
 	for (size_t i = 0; i < size; i++) {
-		if (list[i] == Directive)
+		if (list[i] == directive)
 			return (true);
 	}
 	return (false);
 }
 
-bool Http::openContext( std::string Directive ) {
-	if (Directive == "server") {
+/*	_activeContext is switched in case the portion of line read is "server" or
+	"location". In those cases, an instance is also created.
+*/
+bool Http::openContext( std::string directive ) {
+	if (directive == "server") {
 		_activeContext = SERVER;
-		std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl;
+		std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext);
+		
+		Server s(_n_server);
+		_server.push_back(s); // copy constructor
+		_n_server++;
+		
+		std::cout << G(" - index: ") << _server.back().getIndex() << std::endl;
 		return (true);
 	} 
-	if (Directive == "location") {
+	if (directive == "location") {
+		if (_prevLvl == HTTP)
+			throw ParserExcept(E_INVCONTEXT);
 		_activeContext = LOCATION;
 		std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl;
+
+		std::cout << Y("* [ADDING LOCATION to server number: ") << _server.back().getIndex() << std::endl;
+		_server.back().addLocation(); // MISTAKE ???? seems ok
+		
+		std::cout << G("* [index of new location]: ") << _server.back().getLocation().back().getIndex() << std::endl;
 		return (true);
 	}
 	return (false);
@@ -204,49 +220,37 @@ std::string Http::getValue( std::string directive, std::string& line ) {
 }
 
 void Http::storeDirective(std::string directive, std::string value) {
-	// std::cout <<"* SETTING: ";
-	// if (_activeContext == HTTP) {
-	// 	std::cout << directive << " - " << value << std::endl;
-	// 	_settings[directive] = value;
-	// }
-	// if (_activeContext == SERVER) {
-	// 	std::cout << directive << " - " << value << std::endl;
-	// 	std::cout << "	* SERVER NUMBER: " << _server.back().getIndex() << std::endl;
-	// 	_server.back().setSettings(directive, value);
-	// }
-	// if (_activeContext == LOCATION) {
-	// 	std::cout << directive << " - " << value << std::endl;
-	// 	// implement
-	// }
+	std::cout << R("* STORING DIRECTIVE: ");
+	if (_activeContext == HTTP) {
+		std::cout << "-----[ HTTP ] " << directive << " - " << value << std::endl;
+		_settings[directive] = value;
+	}
+	if (_activeContext == SERVER) {
+		std::cout << "-----[ SERVER " << _server.back().getIndex() << " ] " << directive << " - " << value << std::endl;
+		_server.back().setSettings(directive, value);
+	}
+	if (_activeContext == LOCATION) {
+		std::cout << "-----[ LOCATION ] " << directive << " - " << value << std::endl;
+		// maybe add a guard in case size == 0 ?
+		_server.back().getLocation().back().setSettings(directive, value);
+	}
 	
 }
 
 // -------------------------------------------------------------------- DISPLAY
-void Http::displayServerConf( void ) {
-	std::cout << G("[SERVER]");
-	std::vector<Server>::iterator currServ = _server.begin();
-	while (currServ != _server.end()) {
-		std::map<std::string, std::string> settings = (*currServ).getSettings();
-		std::map<std::string, std::string>::iterator currSetting = settings.begin();
-		while (currSetting != settings.end()) {
-			std::cout << "  * " << (*currSetting).first << ":	" << (*currSetting).second << std::endl;
-			currSetting++;	
-		}
-		currServ++;
-	}
-}
-
 void Http::displayConfiguration( void ) {
-	std::cout << B("*** WEB SERVER CONFIGURATION ***") << std::endl;
-	
+	std::cout << B("******** { WEB SERVER CONFIGURATION } ********") << std::endl;
 	std::cout << G("[HTTP]") << std::endl;
-	std::map<std::string, std::string>::iterator it = _settings.begin();
-	while (it != _settings.end()) {
-		std::cout << "  * " << (*it).first << ":	" << (*it).second << std::endl;
-		it++;
+	std::map<std::string, std::string>::iterator httpIt = _settings.begin();
+	while (httpIt != _settings.end()) {
+		std::cout << "  * " << (*httpIt).first << ": " << (*httpIt).second << std::endl;
+		httpIt++;
 	}
-	displayServerConf();
-	std::cout << G("[LOCATION]") << std::endl;
+	std::vector<Server>::iterator serverIt = _server.begin();
+	while (serverIt != _server.end()) {
+		(*serverIt).displayServerSettings();
+		serverIt++;
+	}
 }
 
 
@@ -263,13 +267,12 @@ const char* Http::FileExcept::what() const throw() {
 // ----------------------------------------------------------- PARSE EXCEPTIONS
 Http::ParserExcept::ParserExcept( parser_err n ): _n(n) {};
 const char* Http::ParserExcept::what() const throw() {
-	std::string base = "invalid configuration: ";
-	if (_n == E_INVDIR) base += "directive does't exist";
-	if (_n == E_ONLYTABS) base += "directive expected after tabs";
-	if (_n == E_INVCONTEXT) base += "directive declared in wrong context";
-	if (_n == E_INVIND) base += "invalid indentation";
-	if (_n == E_ENDDECL) base += "directive end not found";
-	return (base.c_str());
+	if (_n == E_INVDIR) return("invalid conf: directive does't exist");
+	if (_n == E_ONLYTABS) return("invalid conf: directive expected after tabs");
+	if (_n == E_INVCONTEXT) return("invalid conf: directive declared in wrong context");
+	if (_n == E_INVIND) return("invalid conf: invalid indentation");
+	if (_n == E_ENDDECL) return("invalid conf: directive end not found");
+	return ("Unknkow exception");
 }
 
 // -------------------------------------------------------------------- STATICS

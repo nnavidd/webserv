@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 15:34:44 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 12:33:48 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 17:01:28 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <vector>
 #include <map>
 #include "Location.hpp"
+#include "colors.h"
 
 class Server
 {
@@ -30,18 +31,18 @@ class Server
 		
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 		size_t getIndex( void );
+		std::vector<Location> getLocation( void );
 		std::map<std::string, std::string> getSettings( void );
-		size_t setSettings( std::string key, std::string value );
+		void setSettings( std::string key, std::string value );
+		void addLocation( void );
+
+		void displayServerSettings( void );
 	
 	private: // ----------------------------------------------- PRIVATE MEMBERS
 		size_t _i;
-		bool is_default;
+		size_t _n_location;
+		std::vector<Location> _location;
 		std::map<std::string, std::string> _settings;
-		std::vector<Location> location;
-		
-		// std::string				server_name;
-		// std::string				listen;
-		// std::string				root;
 };
 
 #endif /* __SERVER_HPP__ */
