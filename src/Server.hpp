@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 15:34:44 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/15 12:43:40 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 12:33:48 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,9 @@ class Server
 		
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 		size_t getIndex( void );
+		std::map<std::string, std::string> getSettings( void );
 		size_t setSettings( std::string key, std::string value );
+	
 	private: // ----------------------------------------------- PRIVATE MEMBERS
 		size_t _i;
 		bool is_default;

@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 10:53:59 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/19 12:41:46 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,6 @@
 #define	NEWLINE(c)		((c) == '\n')
 #define	COMMENT(c)		((c) == '#')
 #define	ENDVALUE(c)		((c) == ';')
-#define	OPENBLOCK(c)	((c) == '{')
-#define	CLOSEBLOCK(c)	((c) == '}')
 
 #define N_HTTP_DIR		3
 #define N_SERVER_DIR	4
@@ -49,7 +47,8 @@ enum parser_err {
 	E_ONLYTABS = 114,
 	E_INVDIR,
 	E_INVCONTEXT,
-	E_INVIND
+	E_INVIND,
+	E_ENDDECL,
 };
 
 enum indentation {
@@ -80,19 +79,24 @@ class Http
 		bool isDirectory( char* path ); // ---------------------------- PARSING
 		void parse( std::ifstream& confFile );
 		
-		// indentation _prevLvl;
 		indentation _currLvl;
 		indentation _activeContext;
 		void setCurrIndentation( std::string& line );
 		std::string displayIndentantion( indentation );
 		
 		
-		std::string getCurrDirective( std::string& line );
+		std::string getDirective( std::string& line );
 		bool isValidDirective( std::string currDirective );
 		
 		bool openContext( std::string contextToOpen );
 		void closeContext( void );
-		bool isCorrectContextOpen( std::string currDirective );
+		bool isCorrectContextOpen( void );
+		std::string getValue( std::string directive, std::string& line );
+
+		void storeDirective(std::string directive, std::string value);
+
+		void displayConfiguration( void );
+		void displayServerConf( void );
 
 		static const std::string _httpDirectives[N_HTTP_DIR]; // ---------- DIRECTIVE LISTS
 		static const std::string _serverDirectives[N_SERVER_DIR];
