@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 10:10:04 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 10:18:39 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,10 @@ void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 Http::Http( int argc, char** argv ): 
 	_n_server(0),
 	_prevLvl(INIT),
-	_currLvl(HTTP),
+	_currLvl(INIT),
 	_activeContext(HTTP) {
 
-	// if (argc > 2) throw FileExcept(E_TOOARGS); // enable/disable
+	if (argc > 2) throw FileExcept(E_TOOARGS);
 
 	std::ifstream confFile;
 	if (!argv[1] || std::string(argv[1]).empty())
@@ -93,20 +93,25 @@ void Http::parse( std::ifstream& confFile ) {
 			throw ParserExcept(E_INVDIR);
 		if (openContext(directive))
 			continue ;
-		closeContext();												// if the current level of indentation is lower than the one before, one or two context are closed 
+		closeContext();							// if the current level of indentation is lower than the one before, one or two context are closed 
 		if (!isCorrectContextOpen())			// check if the context for {{{THAT}}} directive is open
 			throw ParserExcept(E_INVCONTEXT);
 		value = getValue(directive, line);
 		storeDirective(directive, value);
 	}
 	displayConfiguration();
+	checkConfiguration();
+}
+
+void Http::checkConfiguration( void ) {
+	// return error if configuratio is not complete OR IT's WRONG
 }
 
 /*	Get the number of tabs preceding the line and erase them. To detect some 
 	wrong nesting, we need to store the value of the previous context.
 */
 void Http::setCurrIndentation( std::string& line ) {
-	if (_currLvl != COMMENT)
+	if (_currLvl != COMMENT && _currLvl != INIT)
 		_prevLvl = _currLvl;
 	int i = 0;
 	while (line[static_cast<size_t>(i)] == '\t')
@@ -178,7 +183,9 @@ bool Http::openContext( std::string directive ) {
 		return (true);
 	} 
 	if (directive == "location") {
-		if (_prevLvl == HTTP)// && _currLvl != SERVER)
+		if (_prevLvl == INIT) // cut_server.conf
+			throw ParserExcept(E_INVCONTEXT);
+		if (_prevLvl == HTTP && _currLvl != SERVER) // cut_server.conf
 			throw ParserExcept(E_INVCONTEXT);
 		_activeContext = LOCATION;
 		VERBOSE ? std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl : std::cout;
