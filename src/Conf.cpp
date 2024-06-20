@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/20 14:53:33 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 15:35:24 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 15:49:42 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,10 @@ void Conf::checkConfiguration( void ) {
 	//
 	//	NEED IMPLEMENTATION: waiting until we know which are the limits of the parameters, 
 	//	which is the minimal/default configuration and so on. 
-	//	Also [location] is not sure if it can exist.
+	//	- Also [location] is not sure if STRICLTY NEEDED.
+	//	- If something not set what happens? Like keepalive_timeout...?
+	//	- Suppose file with only server written inside
+	//	- If two server have same name OR same port???
 	//
 	////////////
 }
@@ -264,7 +267,7 @@ const char* Conf::FileExcept::what() const throw() {
 
 Conf::ParseExcept::ParseExcept( parse_err n ): _n(n) {};
 const char* Conf::ParseExcept::what() const throw() {
-	if (_n == E_INVDIR) return("invalid conf: directive does't exist");
+	if (_n == E_INVDIR) return("invalid conf: directive doesn't exist, or wrong indented");
 	if (_n == E_CONTNAME) return("invalid conf: context name");
 	if (_n == E_ONLYTABS) return("invalid conf: directive expected after tabs");
 	if (_n == E_INVCONTEXT) return("invalid conf: directive declared in wrong context");
