@@ -6,13 +6,13 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 10:02:59 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 15:40:13 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-// ---------------------------------------------------------- USED CONSTRUCTORS
+// ----------------------------------------------------------- USED CONSTRUCTORS
 Location::~Location( void ) {};
 Location::Location( const Location& obj ):
 	_i(obj._i),
@@ -20,10 +20,6 @@ Location::Location( const Location& obj ):
 Location::Location ( size_t i ): 
 	_i(i),
 	_settings(std::map<std::string, std::string>()) {};
-
-// -------------------------------------------------------- UNUSED CONSTRUCTORS
-Location::Location ( void ) {/* Not needed */};
-void Location::operator=( const Location& ) {/* Not needed */};
 
 // ------------------------------------------------------------- PUBLIC MEMBERS
 size_t Location::getIndex( void ) { return (_i); };
@@ -40,3 +36,7 @@ void Location::displayLocationSettings( void ) {
 		it++;
 	}
 }
+
+// -------------------------------------------------------- UNUSED CONSTRUCTORS
+Location::Location ( void ) {/* Not needed */};
+void Location::operator=( const Location& ) {/* Not needed */};

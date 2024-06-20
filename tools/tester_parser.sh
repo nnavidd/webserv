@@ -14,12 +14,11 @@ CONF_FOLDER=./conf/valid/;
 CONF_FILES=$(ls "$CONF_FOLDER");
 echo -e "\n[ VALID CONF ]";
 for FILE in $CONF_FILES; do
-	echo -n "[$FILE]"
 	./webserv "$CONF_FOLDER$FILE";
 	if [[ $? == 0 ]]; then
-		echo -e "${G}[OK]${NC}";
+		echo -e "${G}[OK]   ${NC} [$FILE]";
 	else
-		echo -e "${R}[FAIL]${NC}"
+		echo -e "${R}[FAIL] ${NC} [$FILE]"
 	fi;
 done;
 
@@ -30,11 +29,10 @@ CONF_FOLDER=./conf/invalid/;
 CONF_FILES=$(ls "$CONF_FOLDER");
 echo "[ INVALID CONF ]";
 for FILE in $CONF_FILES; do
-	echo "[$FILE]"
 	./webserv "$CONF_FOLDER$FILE";
 	if [[ $? == 0 ]]; then
-		echo -e "${R}[FAIL]${NC}\n"
+		echo -e "${Y}[FAIL] ${NC} [$FILE]\n"
 	else
-		echo -e "${G}[OK]${NC}\n";
+		echo -e "${G}[OK]   ${NC} [$FILE]\n";
 	fi;
 done;

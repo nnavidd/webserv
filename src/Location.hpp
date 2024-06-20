@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 14:32:58 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 08:51:50 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 15:39:52 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,23 +20,23 @@
 
 class Location
 {
-	public: // -------------------------------------------- PUBLIC CONSTRUCTORS
+	public: // ---------------------------------------------- USED CONSTRUCTORS
 		Location( size_t );
 		~Location( void );
-		Location( const Location& );
-	private:  // ----------------------------------------- PRIVATE CONSTRUCTORS
-		Location( void );
-		void operator=( const Location& );
-		
+		Location( const Location& );		
+	
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 		size_t getIndex( void );
 		std::map<std::string, std::string> getSettings( void );
 		void setSettings( std::string key, std::string value );
-		void displayLocationSettings( void );
+		void displayLocationSettings( void );  // --------------------- DISPLAY
 	
 	private: // ----------------------------------------------- PRIVATE MEMBERS
 		size_t _i;
 		std::map<std::string, std::string> _settings;
+
+		Location( void ); // ------------------------------ UNUSED CONSTRUCTORS
+		void operator=( const Location& );
 };
 
 #endif /* __LOCATION_HPP__ */

@@ -6,23 +6,20 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 10:02:15 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 15:39:29 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-// ------------------------------------------------------------------ CANONICAL
-Server::Server ( void ) {/* Not needed */};
+// ----------------------------------------------------------- USED CONSTRUCTORS
 Server::~Server( void ) {};
 Server::Server( const Server& obj ):
 	_i(obj._i),
 	_n_location(obj._n_location),	// {};
 	_location(obj._location),		// was a mistake !!!
 	_settings(obj._settings) {};
-void Server::operator=( const Server& ) {/* Not needed */};
 
-// ---------------------------------------------------------- PARAM CONSTRUCTOR
 Server::Server ( size_t i ): 
 	_i(i),
 	_n_location(0),
@@ -43,7 +40,6 @@ void Server::addLocation( void ) {
 
 // -------------------------------------------------------------------- DISPLAY
 void Server::displayServerSettings( void ) {
-	VERBOSE ? std::cout << G("    [SERVER]") << std::endl : std::cout;
 	std::map<std::string, std::string>::iterator it = _settings.begin();
 	while (it != _settings.end()) {
 		VERBOSE ? std::cout << "      * " << (*it).first << ": " << (*it).second << std::endl : std::cout;
@@ -55,3 +51,7 @@ void Server::displayServerSettings( void ) {
 		locationIt++;
 	}
 }
+
+// -------------------------------------------------------- UNUSED CONSTRUCTORS
+Server::Server ( void ) {/* Not needed */};
+void Server::operator=( const Server& ) {/* Not needed */};
