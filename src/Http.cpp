@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 17:02:19 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 10:10:04 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,11 +21,11 @@ void Http::operator=( const Http& rhs ) { (void)rhs;/* Not implemented */};
 // ---------------------------------------------------------- PARAM CONSTRUCTOR
 Http::Http( int argc, char** argv ): 
 	_n_server(0),
-	_prevLvl(HTTP),
+	_prevLvl(INIT),
 	_currLvl(HTTP),
 	_activeContext(HTTP) {
 
-	if (argc > 2) throw FileExcept(E_TOOARGS);
+	// if (argc > 2) throw FileExcept(E_TOOARGS); // enable/disable
 
 	std::ifstream confFile;
 	if (!argv[1] || std::string(argv[1]).empty())
@@ -77,18 +77,19 @@ void Http::parse( std::ifstream& confFile ) {
 	while(getline(confFile, line, '\n')) {
 		if (confFile.fail()) throw FileExcept(E_FAIL);
 		
-		if (line.empty()) continue ;							// empty lines are jumped
-		if (COMMENT(line[0]) || ENDVALUE(line[0])) continue ;	// comment lines are jumped
+		if (line.empty()) continue ;												// empty lines are jumped
+		if (line.find_first_not_of(" \t") == std::string::npos) continue ;			// line with only spaces and IND don't do nothing neither changing level
 
 		// store the prev level
 		setCurrIndentation(line); // set curr level based on line TABS
-		std::cout << "------------------------------------------------------------" << std::endl;
-		std::cout << G("* [LINE]     ") << "[" << line << "]" << std::endl;
-		std::cout << B("* [PREV IND] ") << "[ " << displayIndentantion(_prevLvl) << " ]" << std::endl;
-		std::cout << B("* [CURR IND] ") << "[ " << displayIndentantion(_currLvl) << " ]" << std::endl;
-
+		if (_currLvl == COMMENT) continue;
+		VERBOSE ? std::cout << "------------------------------------------------------------" << std::endl : std::cout;
+		VERBOSE ? std::cout << G("* [LINE]     ") << "[" << line << "]" << std::endl : std::cout;
+		VERBOSE ? std::cout << B("* [PREV IND] ") << "[ " << displayIndentantion(_prevLvl) << " ]" << std::endl : std::cout;
+		VERBOSE ? std::cout << B("* [CURR IND] ") << "[ " << displayIndentantion(_currLvl) << " ]" << std::endl : std::cout;
+		
 		directive = getDirective(line);
-		if (!isValidDirective(directive))						// the directive exists
+		if (!isValidDirective(directive))
 			throw ParserExcept(E_INVDIR);
 		if (openContext(directive))
 			continue ;
@@ -105,7 +106,8 @@ void Http::parse( std::ifstream& confFile ) {
 	wrong nesting, we need to store the value of the previous context.
 */
 void Http::setCurrIndentation( std::string& line ) {
-	_prevLvl = _currLvl;
+	if (_currLvl != COMMENT)
+		_prevLvl = _currLvl;
 	int i = 0;
 	while (line[static_cast<size_t>(i)] == '\t')
 		i++;
@@ -113,7 +115,13 @@ void Http::setCurrIndentation( std::string& line ) {
 	if (i == 0) _currLvl = HTTP;
 	if (i == 1) _currLvl = SERVER;
 	if (i == 2) _currLvl = LOCATION;
-	if (i > 2) throw ParserExcept(E_INVIND);
+	if (COMMENT(line[0]) || ENDVALUE(line[0])) {
+		_currLvl = COMMENT;
+		return ;
+	}
+	if (i > 2)
+		throw ParserExcept(E_INVIND);
+	// }
 }
 
 std::string Http::displayIndentantion( indentation ind ) {
@@ -127,7 +135,6 @@ std::string Http::getDirective( std::string& line ) {
 	if (line.empty())
 		throw ParserExcept(E_ONLYTABS);
 	size_t firstSpace = line.find_first_of(SPACES);				// go to first space
-	// if not exist throw error ---- NO because already checked in isValidDirective
 	std::string directive = line.substr(0, firstSpace);		// cut the string
 	return (directive); // can be also a context names
 }
@@ -161,25 +168,25 @@ bool Http::isValidDirective( std::string directive ) {
 bool Http::openContext( std::string directive ) {
 	if (directive == "server") {
 		_activeContext = SERVER;
-		std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext);
+		VERBOSE ? std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) : std::cout;
 		
 		Server s(_n_server);
 		_server.push_back(s); // copy constructor
 		_n_server++;
 		
-		std::cout << G(" - index: ") << _server.back().getIndex() << std::endl;
+		VERBOSE ? std::cout << G(" - index: ") << _server.back().getIndex() << std::endl : std::cout;
 		return (true);
 	} 
 	if (directive == "location") {
-		if (_prevLvl == HTTP)
+		if (_prevLvl == HTTP)// && _currLvl != SERVER)
 			throw ParserExcept(E_INVCONTEXT);
 		_activeContext = LOCATION;
-		std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl;
+		VERBOSE ? std::cout << G("* [ACTIVATED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl : std::cout;
 
-		std::cout << Y("* [ADDING LOCATION to server number: ") << _server.back().getIndex() << std::endl;
+		VERBOSE ? std::cout << Y("* [ADDING LOCATION to server number: ") << _server.back().getIndex() << std::endl : std::cout;
 		_server.back().addLocation(); // MISTAKE ???? seems ok
 		
-		std::cout << G("* [index of new location]: ") << _server.back().getLocation().back().getIndex() << std::endl;
+		VERBOSE ? std::cout << G("* [index of new location]: ") << _server.back().getLocation().back().getIndex() << std::endl : std::cout;
 		return (true);
 	}
 	return (false);
@@ -190,9 +197,9 @@ bool Http::openContext( std::string directive ) {
 */
 void Http::closeContext( void ) {
 	if (_currLvl < _activeContext) {
-		std::cout << R("* [CLOSED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl;
+		VERBOSE ? std::cout << R("* [CLOSED CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl : std::cout;
 		_activeContext = _currLvl;
-		std::cout << G("* [ACTIVE CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl;
+		VERBOSE ? std::cout << G("* [ACTIVE CONTEXT]: ") << displayIndentantion(_activeContext) << std::endl : std::cout;
 	}
 }
 
@@ -220,17 +227,17 @@ std::string Http::getValue( std::string directive, std::string& line ) {
 }
 
 void Http::storeDirective(std::string directive, std::string value) {
-	std::cout << R("* STORING DIRECTIVE: ");
+	VERBOSE ? std::cout << R("* STORING DIRECTIVE: ") : std::cout;
 	if (_activeContext == HTTP) {
-		std::cout << "-----[ HTTP ] " << directive << " - " << value << std::endl;
+		VERBOSE ? std::cout << "-----[ HTTP ] " << directive << " - " << value << std::endl : std::cout;
 		_settings[directive] = value;
 	}
 	if (_activeContext == SERVER) {
-		std::cout << "-----[ SERVER " << _server.back().getIndex() << " ] " << directive << " - " << value << std::endl;
+		VERBOSE ? std::cout << "-----[ SERVER " << _server.back().getIndex() << " ] " << directive << " - " << value << std::endl : std::cout;
 		_server.back().setSettings(directive, value);
 	}
 	if (_activeContext == LOCATION) {
-		std::cout << "-----[ LOCATION ] " << directive << " - " << value << std::endl;
+		VERBOSE ? std::cout << "-----[ LOCATION ] " << directive << " - " << value << std::endl : std::cout;
 		// maybe add a guard in case size == 0 ?
 		_server.back().getLocation().back().setSettings(directive, value);
 	}
@@ -239,11 +246,11 @@ void Http::storeDirective(std::string directive, std::string value) {
 
 // -------------------------------------------------------------------- DISPLAY
 void Http::displayConfiguration( void ) {
-	std::cout << B("******** { WEB SERVER CONFIGURATION } ********") << std::endl;
-	std::cout << G("[HTTP]") << std::endl;
+	VERBOSE ? std::cout << B("******** { WEB SERVER CONFIGURATION } ********") << std::endl : std::cout;
+	VERBOSE ? std::cout << G("[HTTP]") << std::endl : std::cout;
 	std::map<std::string, std::string>::iterator httpIt = _settings.begin();
 	while (httpIt != _settings.end()) {
-		std::cout << "  * " << (*httpIt).first << ": " << (*httpIt).second << std::endl;
+		VERBOSE ? std::cout << "  * " << (*httpIt).first << ": " << (*httpIt).second << std::endl : std::cout;
 		httpIt++;
 	}
 	std::vector<Server>::iterator serverIt = _server.begin();

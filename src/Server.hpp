@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 15:34:44 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 17:01:28 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 10:01:50 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ class Server
 		
 	public: // ------------------------------------------------- PUBLIC MEMBERS
 		size_t getIndex( void );
-		std::vector<Location> getLocation( void );
+		std::vector<Location>& getLocation( void );
 		std::map<std::string, std::string> getSettings( void );
 		void setSettings( std::string key, std::string value );
 		void addLocation( void );

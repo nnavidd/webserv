@@ -6,7 +6,7 @@
 #    By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/06/12 10:15:37 by ncasteln          #+#    #+#              #
-#    Updated: 2024/06/19 12:49:08 by ncasteln         ###   ########.fr        #
+#    Updated: 2024/06/20 10:01:16 by ncasteln         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,22 +32,22 @@ INCLUDE		=	-I./include/ -I./src/
 OBJS_PATH	=	objs
 OBJS		=	$(SRC:%.cpp=$(OBJS_PATH)/%.o)
 
-# SILENT		=	-DSILENT=0
-# ifeq ($(filter SILENT,$(MAKECMDGOALS)),SILENT)
-# 	SILENT	=	-DSILENT=1
-# endif
+VERBOSE		=	-DVERBOSE=0
+ifeq ($(filter verbose,$(MAKECMDGOALS)),verbose)
+	VERBOSE	=	-DVERBOSE=1
+endif
 
 # ----------------------------------------------------------------------- BASIC
 all: $(NAME)
 
-silent: $(NAME)
+verbose: $(NAME)
 
 $(NAME): $(OBJS)
-	c++ $(CXXFLAGS) $(INCLUDE) $(OBJS) -o $(NAME)
+	c++ $(CXXFLAGS) $(INCLUDE) $(OBJS) -o $(NAME) $(VERBOSE)
 
 $(OBJS_PATH)/%.o: %.cpp $(HEADERS)
 	mkdir -p $(OBJS_PATH)
-	c++ $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+	c++ $(CXXFLAGS) $(INCLUDE) -c $< -o $@ $(VERBOSE)
 
 clean:
 	rm -rf $(OBJS_PATH)
@@ -81,4 +81,4 @@ R	=	\033[0;31m
 W	=	\033[0m
 N	=	\033[1;30m
 
-.PHONY: all clean fclean re nginx nginx-img nginx-rm
+.PHONY: all clean fclean re nginx nginx-img nginx-rm verbose

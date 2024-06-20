@@ -6,16 +6,16 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/19 16:43:30 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 09:57:50 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __HTTP_HPP__
 # define __HTTP_HPP__
 
-#ifndef	SILENT
-# define SILENT	0
-#endif
+// #ifndef	VERBOSE
+// # define VERBOSE	1
+// #endif
 
 #include "Server.hpp"
 #include <stdexcept>
@@ -57,7 +57,8 @@ enum indentation {
 	INIT = -1,
 	HTTP,
 	SERVER,
-	LOCATION
+	LOCATION,
+	COMMENT
 };
 
 class Http
