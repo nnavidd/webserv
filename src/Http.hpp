@@ -6,18 +6,15 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 09:57:50 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 11:14:41 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __HTTP_HPP__
 # define __HTTP_HPP__
 
-// #ifndef	VERBOSE
-// # define VERBOSE	1
-// #endif
-
 #include "Server.hpp"
+#include "Conf.hpp"
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
@@ -77,6 +74,8 @@ class Http
 		size_t _n_server;
 		std::vector<Server> _server;
 		std::map<std::string, std::string> _settings;
+
+		////////////////////////////////////////////////////////////////////////////
 
 		bool isDirectory( char* path ); // ---------------------------- PARSING
 		void parse( std::ifstream& confFile );

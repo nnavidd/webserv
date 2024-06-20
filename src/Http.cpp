@@ -6,7 +6,7 @@
 /*   By: ncasteln <ncasteln@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 10:32:42 by ncasteln          #+#    #+#             */
-/*   Updated: 2024/06/20 10:18:39 by ncasteln         ###   ########.fr       */
+/*   Updated: 2024/06/20 11:09:54 by ncasteln         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@ Http::Http( int argc, char** argv ):
 	_prevLvl(INIT),
 	_currLvl(INIT),
 	_activeContext(HTTP) {
+
+	// Parser::parse(argc, argv);
 
 	if (argc > 2) throw FileExcept(E_TOOARGS);
 
@@ -100,12 +102,12 @@ void Http::parse( std::ifstream& confFile ) {
 		storeDirective(directive, value);
 	}
 	displayConfiguration();
-	checkConfiguration();
+	// checkConfiguration();
 }
 
-void Http::checkConfiguration( void ) {
-	// return error if configuratio is not complete OR IT's WRONG
-}
+// void Http::checkConfiguration( void ) {
+// 	// return error if configuratio is not complete OR IT's WRONG
+// }
 
 /*	Get the number of tabs preceding the line and erase them. To detect some 
 	wrong nesting, we need to store the value of the previous context.
@@ -233,7 +235,7 @@ std::string Http::getValue( std::string directive, std::string& line ) {
 	return (value);
 }
 
-void Http::storeDirective(std::string directive, std::string value) {
+void Http::storeDirective( std::string directive, std::string value ) {
 	VERBOSE ? std::cout << R("* STORING DIRECTIVE: ") : std::cout;
 	if (_activeContext == HTTP) {
 		VERBOSE ? std::cout << "-----[ HTTP ] " << directive << " - " << value << std::endl : std::cout;
