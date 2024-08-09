@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    build:
+      context: ./nginx
+    ports:
+      - '8000:8000'
+    expose:
+      - 8000
+    networks:
+      nginx-client-net:
+        aliases:
+          - nico.com
+          - navid.com
+          - farshad.com
+    restart: always
+    init: true
+
+  client:
+    image: client
+    container_name: client
+    build:
+      context: ./client
+    networks:
+      - nginx-client-net
+    ports:
+      - '9000:9000'
+    expose:
+      - 9000
+    restart: always
+    init: true
+
+networks:
+  nginx-client-net:
+    name: nginx-client-net
