@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>server-0</title>
+	<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+	<h1>server-0</h1>
+	<h2>server_name: 127.0.0.1</h2>
+	<h2>port: 8080</h2>
+	<img width="400" src="image.jpg"/>
+	<video width="320" height="240" controls>
+		<source src="video_cake.mp4" type="video/mp4">
+		Your browser does not support the video tag.
+	</video>
+	<form action="/submit" method="POST" enctype="multipart/form-data">
+		<label for="name">name</label>
+		<input type="text" name="name" required />
+		<label for="file">file</label>
+		<input type="file" name="file" required />
+		<button type="submit">send</button>
+	</form>
+	<script src="./script.js"></script>
+</body>
+</html>
+
