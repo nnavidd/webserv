@@ -22,6 +22,13 @@
 		<input type="file" name="file" required />
 		<button type="submit">send</button>
 	</form>
+
+	<form action="/delete" method="POST" enctype="multipart/form-data">
+		<input type="hidden" name="_method" value="delete" />
+		<label for="name">file</label>
+		<input type="text" name="name" required />
+		<button type="submit">delete</button>
+	</form>
 	<script src="./script.js"></script>
 </body>
 </html>
