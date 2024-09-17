@@ -100,6 +100,7 @@ std::string Get::handleGet(ConnectedSocket &connectedSocket) {
 	std::string content;
 	std::string date, lastMfd, eTag;
 	std::ostringstream responseHeaders;
+	// fixUri(_requestMap["uri"]);
 	std::string uri = _requestMap["uri"];
 	std::string filePath = _serverConfig.at("root") + uri;
 
@@ -121,36 +122,36 @@ std::string Get::handleGet(ConnectedSocket &connectedSocket) {
 	// Check if the requested path is a directory
 	if (!isFile(filePath)) {
 
-			if (uri[uri.length() - 1] != '/') {
-				responseHeaders << httpStatusCode(302) << CRLF
-				<< "Location: " << uri << "/" << CRLF
-				<< "Connection: keep-alive" << CRLF << CRLF;
-				return responseHeaders.str();
-			}
-			
-			if (!isDirectory(uri))
-				return generateErrorPage(404); // Internal Server Error
+		if (uri[uri.length() - 1] != '/') {
+			responseHeaders << httpStatusCode(302) << CRLF
+			<< "Location: " << uri << "/" << CRLF
+			<< "Connection: keep-alive" << CRLF << CRLF;
+			return responseHeaders.str();
+		}
+		
+		if (!isDirectory(uri))
+			return generateErrorPage(404); // Internal Server Error
 
-			// Check for an index file in the directory
-			std::string indexFilePath = findIndexFile(filePath);
-			if (!indexFilePath.empty()) {
-					filePath = indexFilePath; // Update filePath to point to the index file
-			} else {
-				// If no index file is found and autoindex is enabled, generate directory listing
-				if (getLocationAutoindex(uri) == "") {
-					if (_serverConfig["autoindex"] == "on") {
-						return handleDirectoryListing(filePath);
-					} else {
-						Server::logMessage("WARNING: AutoIndex Is Off for " + filePath);
-						return generateErrorPage(403); // Forbidden
-					}
-				} else if (getLocationAutoindex(uri) == "on") {
+		// Check for an index file in the directory
+		std::string indexFilePath = findIndexFile(filePath);
+		if (!indexFilePath.empty()) {
+				filePath = indexFilePath; // Update filePath to point to the index file
+		} else {
+			// If no index file is found and autoindex is enabled, generate directory listing
+			if (getLocationAutoindex(uri) == "") {
+				if (_serverConfig["autoindex"] == "on") {
 					return handleDirectoryListing(filePath);
 				} else {
 					Server::logMessage("WARNING: AutoIndex Is Off for " + filePath);
 					return generateErrorPage(403); // Forbidden
 				}
+			} else if (getLocationAutoindex(uri) == "on") {
+				return handleDirectoryListing(filePath);
+			} else {
+				Server::logMessage("WARNING: AutoIndex Is Off for " + filePath);
+				return generateErrorPage(403); // Forbidden
 			}
+		}
 	}
 	content = readBinaryFile(filePath);
 	Server::logMessage("INFO: Received GET request for " + filePath);
