@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fahmadia <fahmadia@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: nnabaeei <nnabaeei@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/18 13:10:23 by fahmadia          #+#    #+#             */
-/*   Updated: 2024/09/10 11:00:58 by fahmadia         ###   ########.fr       */
+/*   Updated: 2024/09/17 12:04:19 by nnabaeei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ Server::Server(std::map<std::string, std::string> settings, std::vector<Location
 	_indexes.push_back(settings["index"]);
 	_keepAliveTimeout = stringToInt(settings["keepalive_timeout"]);
 	if (_keepAliveTimeout == 0)
-		logMessage("Warning: KeepAlive Is Wrong Or Zero!, And Default Is Set.");
+		serverLog("Warning: KeepAlive Is Wrong Or Zero!, And Default Is Set.");
 }
 
 Server::Server(const Server &other) :
@@ -85,7 +85,7 @@ void Server::setPortAvailable(void)
 	int setSocketOptionResult = setsockopt(this->_listeningSocket.getSocketFd(), SOL_SOCKET, SO_REUSEADDR, &reusePort, sizeof(reusePort));
 	if (setSocketOptionResult == -1)
 	{
-		logMessage("ERROR: Setting socket options failed!");
+		serverLog("ERROR: Setting socket options failed!");
 		Exception exception("Setting socket options failed!", SOCKET_OPTIONS_FAILED);
 		throw exception;
 	}
@@ -97,7 +97,7 @@ void Server::bindSocket(void) const
 	int bindResult = bind(this->_listeningSocket.getSocketFd(), this->_listeningSocket.getAddressInfo()->ai_addr, this->_listeningSocket.getAddressInfo()->ai_addrlen);
 	if (bindResult != 0)
 	{
-		logMessage("ERROR: Binding the socket to the address failed!");
+		serverLog("ERROR: Binding the socket to the address failed!");
 		Exception exception("Binding the socket to the address failed!", BIND_SOCKET_FAILED);
 		throw exception;
 	}
@@ -110,7 +110,7 @@ void Server::listenToRequests(void) const
 	int listenResult = listen(this->_listeningSocket.getSocketFd(), static_cast<int>(this->_listeningSocket.getMaxIncomingConnections()));
 	if (listenResult == -1)
 	{
-		logMessage("ERROR: Listening to incoming connections failed!");
+		serverLog("ERROR: Listening to incoming connections failed!");
 		Exception exception("Listening to incoming connections failed!", LISTENING_FAILED);
 		throw exception;
 	}
@@ -127,10 +127,10 @@ int Server::acceptFirstRequestInQueue(bool addToConnectedSocketsList)
 	int connectedSocketFd = accept(this->_listeningSocket.getSocketFd(), reinterpret_cast<sockaddr *>(&incomingConnectionAddress), &incomingConnectionAddressSize);
 
 	if (fcntl(connectedSocketFd, F_SETFL, O_NONBLOCK) == -1)
-		Server::logMessage("ERROR: The fcntl F_SETFL Error Set!");
+		Server::serverLog("ERROR: The fcntl F_SETFL Error Set!");
 	if (connectedSocketFd < 0)
 	{
-		Server::logMessage("ERROR: Accepting the request failed");
+		Server::serverLog("ERROR: Accepting the request failed");
 		return (ACCEPTING_FAILED);
 	}
 
@@ -198,7 +198,7 @@ int Server::stringToInt(const std::string &str) {
 }
 
 
-void Server::logMessage(const std::string &message) {
+void Server::serverLog(const std::string &message) {
     const std::string logFileName = "./src/server.log";
 
     struct stat buffer;

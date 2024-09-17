@@ -24,10 +24,10 @@ Get::~Get() {}
 
 /*Generate the directory list inside the directory that is passed to it.*/
 std::string Get::handleDirectoryListing(const std::string& dirPath) {
-	Server::logMessage("INFO: Received GET request for " + dirPath);
+	Server::serverLog("INFO: Received GET request for " + dirPath);
 	DIR* dir = opendir(dirPath.c_str());
 	if (!dir) {
-		Server::logMessage("ERROR: Received GET request for '" + dirPath + "' But There Isn't This Directory!");
+		Server::serverLog("ERROR: Received GET request for '" + dirPath + "' But There Isn't This Directory!");
 		return generateErrorPage(404); // Internal Server Error
 	}
 
@@ -77,11 +77,11 @@ std::string Get::findIndexFile(const std::string& dirPath) {
 		const std::string& indexFile = *it;
 		std::string fullPath = dirPath  + indexFile;
 		if (stat(fullPath.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
-			Server::logMessage("INFO: Index File Found: " + fullPath);
+			Server::serverLog("INFO: Index File Found: " + fullPath);
 			return fullPath;
 		}
 	}
-	Server::logMessage("INFO: Index File Not Found For This Address: " + dirPath);
+	Server::serverLog("INFO: Index File Not Found For This Address: " + dirPath);
 
 	return ""; // Return empty string if no index file is found
 }
@@ -117,7 +117,7 @@ std::string Get::handleGet(ConnectedSocket &connectedSocket) {
 		return responseHeaders.str();
 	}	
 
-	Server::logMessage("INFO: Received GET request for " + filePath);
+	Server::serverLog("INFO: Received GET request for " + filePath);
 
 	// Check if the requested path is a directory
 	if (!isFile(filePath)) {
@@ -142,19 +142,19 @@ std::string Get::handleGet(ConnectedSocket &connectedSocket) {
 				if (_serverConfig["autoindex"] == "on") {
 					return handleDirectoryListing(filePath);
 				} else {
-					Server::logMessage("WARNING: AutoIndex Is Off for " + filePath);
+					Server::serverLog("WARNING: AutoIndex Is Off for " + filePath);
 					return generateErrorPage(403); // Forbidden
 				}
 			} else if (getLocationAutoindex(uri) == "on") {
 				return handleDirectoryListing(filePath);
 			} else {
-				Server::logMessage("WARNING: AutoIndex Is Off for " + filePath);
+				Server::serverLog("WARNING: AutoIndex Is Off for " + filePath);
 				return generateErrorPage(403); // Forbidden
 			}
 		}
 	}
 	content = readBinaryFile(filePath);
-	Server::logMessage("INFO: Received GET request for " + filePath);
+	Server::serverLog("INFO: Received GET request for " + filePath);
 
 	// Serve the file if it's not a directory or an index file was found
 	if (!content.empty()) {

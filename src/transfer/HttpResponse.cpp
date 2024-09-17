@@ -6,7 +6,7 @@
 /*   By: nnabaeei <nnabaeei@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/28 00:46:45 by nnavidd           #+#    #+#             */
-/*   Updated: 2024/09/10 16:09:54 by nnabaeei         ###   ########.fr       */
+/*   Updated: 2024/09/17 12:04:19 by nnabaeei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ std::string const &HTTPResponse::getStorageDirectory(void) const {
 /*Validate The Request Header To Return The Corrsponding Status Code.*/
 int HTTPResponse::validate() {
 	if (_requestMap.find("Host") == _requestMap.end()) {
-		Server::logMessage("ERROR: The HOST Is Wrong!");
+		Server::serverLog("ERROR: The HOST Is Wrong!");
 		return (400);
 	// if (_requestMap.find(""))
 	}
@@ -79,13 +79,13 @@ void HTTPResponse::fixUri(std::string const &filePath) {
 		// Safely access the last character manually
 		if (_requestMap["uri"][_requestMap["uri"].size() - 1] != '/') {
 			_requestMap["uri"] += "/";
-			Server::logMessage("INFO: Received URI With No '/' At The End!");
+			Server::serverLog("INFO: Received URI With No '/' At The End!");
 		} else {
 			// If the URI ends with multiple '/', reduce it to just one
 			while (_requestMap["uri"][_requestMap["uri"].size() - 2] == '/') {
 				_requestMap["uri"].erase(_requestMap["uri"].size() - 1);  // Remove extra slashes
 			}
-			Server::logMessage("INFO: Received URI With Some '/' At The End!");
+			Server::serverLog("INFO: Received URI With Some '/' At The End!");
 		}
 	}
 }
@@ -193,7 +193,7 @@ std::string HTTPResponse::httpStatusCode(int statusCode) {
 std::string HTTPResponse::readBinaryFile(std::string const & path) {
 	std::ifstream fileStream(path.c_str(), std::ios::binary);
 	if (!fileStream.is_open()) {
-		Server::logMessage("ERROR: File Not Open In The readBinaryFile Function!");
+		Server::serverLog("ERROR: File Not Open In The readBinaryFile Function!");
 		// perror("error:");
 		return "";
 	}
@@ -207,7 +207,7 @@ std::string HTTPResponse::readBinaryFile(std::string const & path) {
 std::string HTTPResponse::readHtmlFile(const std::string &path) {
 	std::ifstream fileStream(path.c_str());
 	if (!fileStream.is_open()) {
-		Server::logMessage("ERROR: File Not Open In The readHtmlFile Function!");
+		Server::serverLog("ERROR: File Not Open In The readHtmlFile Function!");
 		perror("error:");
 		return "";
 	}
@@ -292,7 +292,7 @@ std::string HTTPResponse::generateETag(const std::string &filePath, std::string 
 	struct stat fileInfo;
 
 	if (stat(filePath.c_str(), &fileInfo) != 0) {
-		Server::logMessage("Error: Getting File Information In generateETag function Failed: " + filePath);
+		Server::serverLog("Error: Getting File Information In generateETag function Failed: " + filePath);
 		return "";
 	}
 
@@ -321,33 +321,33 @@ bool HTTPResponse::handleResponse(int clientSocket, int const &pollEvent, pollfd
 			_responses[clientSocket] = generateErrorPage(400);
 		else
 			_responses[clientSocket] = getResponse(clientSocket, connectedSocket);
-		Server::logMessage("INFO: Response Generated for socket fd: " + Server::intToString(clientSocket));
+		Server::serverLog("INFO: Response Generated for socket fd: " + Server::intToString(clientSocket));
 		return true;
 	}
 	if (pollEvent == POLLOUT_TMP) {
 		std::map<int, std::string>::iterator iter = _responses.find(clientSocket);
 		if (iter == _responses.end()) {
-			Server::logMessage("Error: No response In The _responses found for socket fd: " + Server::intToString(clientSocket));
+			Server::serverLog("Error: No response In The _responses found for socket fd: " + Server::intToString(clientSocket));
 			return false;
 		}
 		std::string response = iter->second;
 		ssize_t bytesSent = send(clientSocket, this->_responses[clientSocket].c_str(), this->_responses[clientSocket].size(), 0);
 
 		if (bytesSent == -1) {
-			Server::logMessage("Error: No Byte Sent for socket fd: " + Server::intToString(clientSocket));
+			Server::serverLog("Error: No Byte Sent for socket fd: " + Server::intToString(clientSocket));
 			return false;
 		}
 
 		connectedSocket.setConnectionStartTime();
 
 		if (bytesSent < static_cast<ssize_t>(this->_responses[clientSocket].size())) {
-			Server::logMessage("WARNING: Sent Byte Less Than The Response for socket fd: " + Server::intToString(clientSocket));
+			Server::serverLog("WARNING: Sent Byte Less Than The Response for socket fd: " + Server::intToString(clientSocket));
 			pollFds[i].events = POLLOUT;
 			this->_responses[clientSocket].erase(0, bytesSent);
 			connectedSocket.setState(WRITING);
 		}
 		else {
-			Server::logMessage("INFO: Response Sent for socket fd: " + Server::intToString(clientSocket));
+			Server::serverLog("INFO: Response Sent for socket fd: " + Server::intToString(clientSocket));
 			connectedSocket.setState(DONE);
 			pollFds[i].events = POLLIN;
 			pollFds[i].revents = 0;
@@ -355,7 +355,7 @@ bool HTTPResponse::handleResponse(int clientSocket, int const &pollEvent, pollfd
 		}
 		return true;
 	}
-	Server::logMessage("ERROR: Response Function Failed for socket fd: " + Server::intToString(clientSocket));
+	Server::serverLog("ERROR: Response Function Failed for socket fd: " + Server::intToString(clientSocket));
 	return false;
 }
 
@@ -369,7 +369,7 @@ void HTTPResponse::printStringToFile(const std::string& string, const std::strin
 	// std::cout << RED "****Printing response in file: " BLUE << path << RESET << std::endl;
 	std::ofstream outfile(path.c_str());
 	if (!outfile.is_open()) {
-		Server::logMessage("ERROR: File Opening Failed In printStringToFile For This Path: " + path);
+		Server::serverLog("ERROR: File Opening Failed In printStringToFile For This Path: " + path);
 		return ;
 	}
 	outfile << string << std::endl;
@@ -390,7 +390,7 @@ void HTTPResponse::setRequestStringInResponse(std::string const & requestString)
 void HTTPResponse::loadMimeTypes(const std::string& filePath) {
 	std::ifstream file(filePath.c_str());
 	if (!file) {
-		Server::logMessage("ERROR: MIME Read Failed: " + filePath);
+		Server::serverLog("ERROR: MIME Read Failed: " + filePath);
 		std::cerr << "Error opening MIME types file: " << filePath << std::endl;
 		return;
 	}
@@ -405,7 +405,7 @@ void HTTPResponse::loadMimeTypes(const std::string& filePath) {
 		}
 		_mimeMap[extension] = mimeType;
 	}
-	Server::logMessage("INFO: MIME Loaded.");
+	Server::serverLog("INFO: MIME Loaded.");
 }
 
 /*Receive The Extention, And Retrieve The Corresponding MIME Type From The MIME Map Variable.*/
@@ -504,13 +504,13 @@ std::string HTTPResponse::generateErrorHeaders(int statusCode, size_t contentLen
 		headers << "Content-Length: " << contentLength << CRLF;
 	}
 		headers << CRLF;
-	Server::logMessage("INFO: Error Header Created, StatusCode: " + Server::intToString(statusCode) );
+	Server::serverLog("INFO: Error Header Created, StatusCode: " + Server::intToString(statusCode) );
 	return headers.str();
 }
 
 /*Generate the default error the corresponding error page doesn't exist.*/
 std::string HTTPResponse::generateDefaultErrorPage(int statusCode, std::string const & message) {
-	Server::logMessage("INFO: Default Error Body Dynamically Generated, StatusCode: " + Server::intToString(statusCode));
+	Server::serverLog("INFO: Default Error Body Dynamically Generated, StatusCode: " + Server::intToString(statusCode));
 
 	std::string content = "<html>\r\n<head><title>" + Server::intToString(statusCode) + " " + message + 
 		"</title></head>\r\n<body>\r\n<center><h2>" + Server::intToString(statusCode) + " "	+ message +
@@ -526,7 +526,7 @@ std::string HTTPResponse::generateErrorPage(int statusCode) {
 
 	std::ifstream file(errorFilePath.c_str());
 	if (file.is_open()) {
-		Server::logMessage("INFO: Default Error Page Statically Read, StatusCode: " + Server::intToString(statusCode));
+		Server::serverLog("INFO: Default Error Page Statically Read, StatusCode: " + Server::intToString(statusCode));
 		// Custom error page exists
 		std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 		size_t contentLength = content.length();
@@ -587,8 +587,8 @@ ChildProcessData HTTPResponse::createPipeAndFork(ConnectedSocket &connectedSocke
 		return connectedSocket.getChildProcessData() ;
 	}
 
-	Server::logMessage("pipeFds[0] = " + Server::intToString(pipeFds[0]));
-	Server::logMessage("pipeFds[1] = " + Server::intToString(pipeFds[1]));
+	Server::serverLog("pipeFds[0] = " + Server::intToString(pipeFds[0]));
+	Server::serverLog("pipeFds[1] = " + Server::intToString(pipeFds[1]));
 
 	pid_t id = fork();
 	if (id == -1) {
@@ -619,19 +619,19 @@ void HTTPResponse::cgiError(ConnectedSocket &connectedSocket) {
 
 void HTTPResponse::handleCgiChildProcess(ConnectedSocket &connectedSocket, int pipeFds[2]) {
 	if (close(pipeFds[0]) == -1) {
-			Server::logMessage(Server::intToString(pipeFds[0]) + ": error when closing");
+			Server::serverLog(Server::intToString(pipeFds[0]) + ": error when closing");
 	}
 	else {
-		Server::logMessage(Server::intToString(pipeFds[0]) + "is closed in child process");
+		Server::serverLog(Server::intToString(pipeFds[0]) + "is closed in child process");
 	}
 
 	pipeFds[0] = -1;
 	dup2(pipeFds[1], STDOUT_FILENO);
 	if (close(pipeFds[1]) == -1) {
-		Server::logMessage(Server::intToString(pipeFds[1]) + ": error when closing");
+		Server::serverLog(Server::intToString(pipeFds[1]) + ": error when closing");
 	}
 	else {
-		Server::logMessage(Server::intToString(pipeFds[1]) + "is closed in child process");
+		Server::serverLog(Server::intToString(pipeFds[1]) + "is closed in child process");
 	}
 	pipeFds[1] = -1;
 
@@ -678,10 +678,10 @@ void HTTPResponse::handleCgiMainProcess(ConnectedSocket &connectedSocket, int pi
 	{
 		if (close(pipeFds[1]) == -1) {
 		connectedSocket.getChildProcessData().pipeFds[1] = -1;
-		Server::logMessage(Server::intToString(pipeFds[1]) + ": error when closing");
+		Server::serverLog(Server::intToString(pipeFds[1]) + ": error when closing");
 		}
 		else {
-		Server::logMessage(Server::intToString(pipeFds[1]) + "is closed in parent process");
+		Server::serverLog(Server::intToString(pipeFds[1]) + "is closed in parent process");
 		}
 	}
 }
@@ -779,10 +779,10 @@ bool HTTPResponse::findScript(ConnectedSocket &connectedSocket, std::string &uri
 	
 	if ((isReadable = access(file.c_str(), R_OK)) == 0)
 	{
-		Server::logMessage("INFO: " + this->_cgiFileName + " is readable.");
+		Server::serverLog("INFO: " + this->_cgiFileName + " is readable.");
 	}
 	else {
-		Server::logMessage("INFO: " + this->_cgiFileName + " is not readable.");
+		Server::serverLog("INFO: " + this->_cgiFileName + " is not readable.");
 		this->_responses[connectedSocket.getSocketFd()] = generateErrorPage(403); 
 		return false;
 	}

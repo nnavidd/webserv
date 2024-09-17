@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Delete.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fahmadia <fahmadia@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: nnabaeei <nnabaeei@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/13 09:06:15 by fahmadia          #+#    #+#             */
-/*   Updated: 2024/09/10 10:04:04 by fahmadia         ###   ########.fr       */
+/*   Updated: 2024/09/17 12:04:19 by nnabaeei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,7 +137,7 @@ bool Delete::deleteFile(ConnectedSocket &connectedSocket) {
 		directory = opendir(fileToDelete.c_str());
 		if (directory)
 		{
-			Server::logMessage("INFO: " + fileToDelete + " is a directory, and not a file!");
+			Server::serverLog("INFO: " + fileToDelete + " is a directory, and not a file!");
 			closedir(directory);
 			this->_responses[connectedSocket.getSocketFd()] = generateErrorPage(403); 
 			return false;

@@ -43,10 +43,10 @@ ListeningSocket::ListeningSocket( unsigned int maxIncomingConnections, std::stri
 		this->_addressInfo = this->allocateAddrInfo();
 		int socketFd = this->createSocket();
 		if (fcntl(socketFd, F_SETFL, O_NONBLOCK) == -1)
-			Server::logMessage("ERROR: The fcntl F_SETFL Error Set!");
+			Server::serverLog("ERROR: The fcntl F_SETFL Error Set!");
 		this->setSocketFd(socketFd);
 	} catch (Exception const &exception) {
-		Server::logMessage("ERROR: " + std::string(exception.what()));
+		Server::serverLog("ERROR: " + std::string(exception.what()));
 		throw exception;
 	}
 	return;
