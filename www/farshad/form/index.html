@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>server-0</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="banner">
+      <h1 class="header">WebServe</h1>
+    </div>
+    <main class="main">
+      <div class="form-container form-container-post">
+        <h2>Please send us your file</h2>
+        <form action="/submit" method="POST" enctype="multipart/form-data">
+          <div class="input-container">
+            <label for="name">
+              <input
+                class="input text-input"
+                type="text"
+                name="name"
+                placeholder="Enter your name"
+                required
+              />
+            </label>
+            <label class="select-file" for="file">
+              <span>select your file</span>
+            </label>
+
+            <input
+              class="input file-input"
+              id="file"
+              type="file"
+              name="file"
+              required
+            />
+          </div>
+          <button class="btn" type="submit">Send / POST</button>
+        </form>
+      </div>
+
+      <div class="form-container form-container-delete">
+        <h2>Please choose the file you want to delete</h2>
+        <form action="/delete" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="_method" value="delete" />
+          <div class="input-container">
+            <label for="name">
+              <input
+                class="input text-input file-to-delete"
+                type="text"
+                name="name"
+                required
+              />
+            </label>
+          </div>
+          <button class="btn" type="submit">Delete / POST</button>
+          <button class="btn delete" type="button">Delete / DELETE</button>
+        </form>
+      </div>
+
+      <div class="form-container form-container-cgi">
+        <h2>CGI POST</h2>
+        <form
+          action="/cgi-post/cgi-post.py"
+          method="POST"
+          enctype="multipart/form-data"
+        >
+          <div class="input-container">
+            <label for="name">
+              <input
+                class="input text-input file-to-delete"
+                type="text"
+                name="name"
+                required
+                placeholder="Enter your name"
+              />
+            </label>
+          </div>
+          <button class="btn" type="submit">CGI / POST</button>
+        </form>
+      </div>
+
+      <div class="form-container form-container-cgi">
+        <h2>CGI GET</h2>
+        <form action="/cgi-get/cgi-get.py" method="GET">
+          <div class="input-container">
+            <label for="number">
+              <input
+                class="input text-input file-to-delete"
+                type="number"
+                name="number"
+                required
+                placeholder="Enter a number to multiply by 2"
+                max="9999"
+              />
+            </label>
+          </div>
+          <button class="btn" type="submit">CGI / GET</button>
+        </form>
+      </div>
+    </main>
+    <script src="./script.js"></script>
+  </body>
+</html>
